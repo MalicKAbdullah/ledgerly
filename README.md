@@ -37,7 +37,7 @@ Ledgerly turns the admin side of freelancing into a few taps: send a polished in
 - Client statements and CSV export
 
 **Peace of mind**
-- **Biometric app lock** (fingerprint / face)
+- **Biometric app lock** (fingerprint / face) — prompts automatically every time Ledgerly opens, with a graceful fallback (your data stays encrypted at rest) on devices with no biometrics or screen lock set up
 - **Encrypted backup & restore** — a passphrase-protected file you control
 
 ## 💰 Money done right

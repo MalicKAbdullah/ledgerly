@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/providers.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
+import 'package:ledgerly/src/features/dashboard/dashboard_providers.dart';
 import 'package:ledgerly/src/features/dashboard/services/dashboard_stats.dart';
 import 'package:ledgerly/src/features/dashboard/widgets/revenue_chart.dart';
 import 'package:ledgerly/src/features/expenses/services/expense_stats.dart';
@@ -61,26 +62,19 @@ final class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-final class _DashboardBody extends StatelessWidget {
+final class _DashboardBody extends ConsumerWidget {
   const _DashboardBody({required this.data});
 
   final AppData data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final brightness = theme.brightness;
-    final now = DateTime.now();
-    final stats = DashboardStats.compute(
-      invoices: data.invoices,
-      currency: data.profile.defaultCurrency,
-      now: now,
-    );
-    final expenseStats = ExpenseStats.compute(
-      expenses: data.expenses,
-      currency: data.profile.defaultCurrency,
-      now: now,
-    );
+    // Memoized: recomputed only when the underlying invoices/expenses change,
+    // not on every dashboard rebuild (theme, media query, snackbar, …).
+    final stats = ref.watch(dashboardStatsProvider)!;
+    final expenseStats = ref.watch(expenseStatsProvider)!;
     final profitThisMonth = stats.paidThisMonth - expenseStats.thisMonth;
 
     if (data.invoices.isEmpty) {

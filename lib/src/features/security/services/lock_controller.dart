@@ -14,6 +14,20 @@ enum LockStatus {
   unlocked,
 }
 
+/// The result of an unlock attempt, so the lock screen can react precisely.
+enum UnlockOutcome {
+  /// The prompt succeeded (or the gate was already open) — the app is unlocked.
+  unlocked,
+
+  /// The user cancelled or the prompt failed. Keep the button for a retry.
+  failed,
+
+  /// The device has no usable authenticator (no biometrics enrolled and no
+  /// screen lock). The gate stays closed but the screen offers a graceful
+  /// way in — data is still encrypted at rest.
+  unavailable,
+}
+
 /// Pure app-lock state machine. No platform channels, no storage — the
 /// authenticator and clock are injected, so the whole matrix is unit-testable.
 ///
@@ -75,18 +89,30 @@ final class LockController extends ChangeNotifier {
   }
 
   /// Runs the device prompt and opens the gate on success. Re-entrant calls
-  /// while a prompt is already showing are rejected.
-  Future<bool> unlock({String reason = 'Unlock Ledgerly'}) async {
-    if (_status == LockStatus.unlocked) return true;
-    if (_authInFlight) return false;
+  /// while a prompt is already showing are rejected ([UnlockOutcome.failed]).
+  ///
+  /// When the device can't authenticate at all (no biometrics, no screen
+  /// lock) the prompt is skipped and [UnlockOutcome.unavailable] is returned
+  /// so the caller can offer a graceful way in rather than a dead end.
+  Future<UnlockOutcome> unlock({String reason = 'Unlock Ledgerly'}) async {
+    if (_status == LockStatus.unlocked) return UnlockOutcome.unlocked;
+    if (_authInFlight) return UnlockOutcome.failed;
     _authInFlight = true;
     try {
+      if (!await _auth.canAuthenticate()) return UnlockOutcome.unavailable;
       final ok = await _auth.authenticate(reason: reason);
       if (ok && _status == LockStatus.locked) _set(LockStatus.unlocked);
-      return ok;
+      return ok ? UnlockOutcome.unlocked : UnlockOutcome.failed;
     } finally {
       _authInFlight = false;
     }
+  }
+
+  /// Opens the gate on a device that has no usable authenticator. Ledgerly's
+  /// data is encrypted at rest, so entry here trades a lock the device can't
+  /// enforce for the alternative — a permanent lockout — which is worse.
+  void enterWithoutAuth() {
+    if (_status == LockStatus.locked) _set(LockStatus.unlocked);
   }
 
   void _set(LockStatus next) {

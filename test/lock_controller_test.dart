@@ -37,7 +37,7 @@ void main() {
   group('unlock', () {
     test('successful auth unlocks and passes the reason', () async {
       final controller = makeController()..restore(enabled: true);
-      expect(await controller.unlock(), isTrue);
+      expect(await controller.unlock(), UnlockOutcome.unlocked);
       expect(controller.status, LockStatus.unlocked);
       expect(auth.lastReason, 'Unlock Ledgerly');
     });
@@ -45,14 +45,34 @@ void main() {
     test('failed auth stays locked', () async {
       auth.authResult = false;
       final controller = makeController()..restore(enabled: true);
-      expect(await controller.unlock(), isFalse);
+      expect(await controller.unlock(), UnlockOutcome.failed);
       expect(controller.status, LockStatus.locked);
     });
 
     test('unlock when already unlocked is a no-prompt no-op', () async {
       final controller = makeController()..restore(enabled: false);
-      expect(await controller.unlock(), isTrue);
+      expect(await controller.unlock(), UnlockOutcome.unlocked);
       expect(auth.authCalls, 0);
+    });
+
+    test('no usable authenticator reports unavailable, never prompts', () async {
+      auth.available = false;
+      final controller = makeController()..restore(enabled: true);
+      expect(await controller.unlock(), UnlockOutcome.unavailable);
+      expect(auth.authCalls, 0);
+      expect(controller.status, LockStatus.locked);
+    });
+
+    test('enterWithoutAuth opens the gate from locked', () {
+      final controller = makeController()..restore(enabled: true);
+      controller.enterWithoutAuth();
+      expect(controller.status, LockStatus.unlocked);
+    });
+
+    test('enterWithoutAuth is a no-op when not locked', () {
+      final controller = makeController()..restore(enabled: false);
+      controller.enterWithoutAuth();
+      expect(controller.status, LockStatus.unlocked);
     });
 
     test('re-entrant unlock while a prompt is showing is rejected', () async {
@@ -62,10 +82,10 @@ void main() {
 
       final first = controller.unlock();
       final second = await controller.unlock();
-      expect(second, isFalse);
+      expect(second, UnlockOutcome.failed);
 
       gate.complete(true);
-      expect(await first, isTrue);
+      expect(await first, UnlockOutcome.unlocked);
       expect(controller.status, LockStatus.unlocked);
       expect(auth.authCalls, 1);
     });

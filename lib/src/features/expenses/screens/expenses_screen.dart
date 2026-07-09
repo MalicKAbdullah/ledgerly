@@ -154,24 +154,37 @@ final class _GroupedExpenseList extends ConsumerWidget {
     final theme = Theme.of(context);
     final currency = data.profile.defaultCurrency;
 
-    // Newest-first list broken into month sections with a subtotal in the
-    // default currency (other currencies listed but not summed).
-    final rows = <Widget>[];
+    // Single pass over the (already newest-first) expenses: sum each month's
+    // subtotal in the default currency and flatten into a lazy row list — a
+    // month header followed by its expenses. Avoids the previous O(n²) rescan
+    // per section and builds only the rows on screen via ListView.builder.
+    final monthTotals = <DateTime, Money>{};
+    final rows = <_ExpenseRow>[];
     DateTime? currentMonth;
     for (final expense in expenses) {
       final month = DateTime(expense.date.year, expense.date.month);
       if (month != currentMonth) {
         currentMonth = month;
-        var monthTotal = Money.zero(currency);
-        for (final e in expenses) {
-          if (e.date.year == month.year &&
-              e.date.month == month.month &&
-              e.currency == currency) {
-            monthTotal += e.amount;
-          }
-        }
-        rows.add(
-          Padding(
+        rows.add(_ExpenseRow.header(month));
+      }
+      if (expense.currency == currency) {
+        monthTotals[month] =
+            (monthTotals[month] ?? Money.zero(currency)) + expense.amount;
+      } else {
+        monthTotals[month] ??= Money.zero(currency);
+      }
+      rows.add(_ExpenseRow.tile(expense));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 96),
+      itemCount: rows.length,
+      itemBuilder: (context, index) {
+        final row = rows[index];
+        final expense = row.expense;
+        if (expense == null) {
+          final month = row.month!;
+          return Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.xs,
               AppSpacing.md,
@@ -185,14 +198,15 @@ final class _GroupedExpenseList extends ConsumerWidget {
                   DateFormat.yMMMM().format(month),
                   style: theme.textTheme.titleSmall,
                 ),
-                Text(monthTotal.format(), style: theme.textTheme.titleSmall),
+                Text(
+                  (monthTotals[month] ?? Money.zero(currency)).format(),
+                  style: theme.textTheme.titleSmall,
+                ),
               ],
             ),
-          ),
-        );
-      }
-      rows.add(
-        Padding(
+          );
+        }
+        return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: _ExpenseTile(
             expense: expense,
@@ -201,15 +215,20 @@ final class _GroupedExpenseList extends ConsumerWidget {
                 : data.clientById(expense.clientId!)?.name,
             onTap: () => onTap(expense),
           ),
-        ),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 96),
-      children: rows,
+        );
+      },
     );
   }
+}
+
+/// One row in the flattened expense list: either a month [header] or an
+/// expense [tile]. Exactly one of [month]/[expense] is non-null.
+final class _ExpenseRow {
+  const _ExpenseRow.header(this.month) : expense = null;
+  const _ExpenseRow.tile(Expense this.expense) : month = null;
+
+  final DateTime? month;
+  final Expense? expense;
 }
 
 final class _ExpenseTile extends ConsumerWidget {
