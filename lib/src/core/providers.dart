@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:core_backup/core_backup.dart';
 import 'package:core_crypto/core_crypto.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,3 +72,38 @@ final backupServiceProvider = Provider<BackupService>(
     clock: ref.watch(clockProvider),
   ),
 );
+
+/// Backup destination folder (shared engine). Android uses the Storage Access
+/// Framework so a Google Drive folder can be picked; iOS uses app documents.
+final backupFolderProvider = Provider<IBackupFolder>(
+  (ref) => Platform.isAndroid
+      ? SafBackupFolder()
+      : const AppDocumentsBackupFolder(),
+);
+
+/// Scheduled auto-backup engine (shared core_backup), namespaced to Ledgerly.
+final autoBackupServiceProvider = Provider<AutoBackupService>(
+  (ref) => AutoBackupService(
+    storage: ref.watch(secureStorageProvider),
+    folder: ref.watch(backupFolderProvider),
+    keyPrefix: 'ledgerly',
+    fileLabel: 'Ledgerly',
+    fileExtension: BackupService.fileExtension,
+    now: () => ref.read(clockProvider).now(),
+  ),
+);
+
+/// Produces the encrypted `.lybackup` bytes for the current ledger, reusing the
+/// existing [BackupService]. Fed to the auto-backup engine and "Back up now".
+final ledgerBackupProducerProvider = Provider<BackupProducer>((ref) {
+  return (passphrase) async {
+    final data = ref.read(appDataProvider).valueOrNull;
+    if (data == null) {
+      throw StateError('Ledger data is not loaded yet.');
+    }
+    final raw = await ref
+        .read(backupServiceProvider)
+        .export(data: data, passphrase: passphrase!);
+    return Uint8List.fromList(utf8.encode(raw));
+  };
+});

@@ -1,3 +1,4 @@
+import 'package:core_backup/core_backup.dart';
 import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
@@ -268,6 +269,15 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/settings/backup'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text('Automatic backup', style: theme.textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.sm),
+          VaultCard(
+            child: AutoBackupSection(
+              service: ref.watch(autoBackupServiceProvider),
+              producer: ref.watch(ledgerBackupProducerProvider),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

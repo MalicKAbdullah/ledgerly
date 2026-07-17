@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +23,22 @@ final class DashboardScreen extends ConsumerStatefulWidget {
 
 final class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _checkedRecurringRun = false;
+  bool _checkedAutoBackup = false;
+
+  /// Runs a scheduled backup once per app open, when one is due (F-4 auto-backup).
+  /// Silent and fire-and-forget; failures are recorded and shown in Settings.
+  void _maybeRunAutoBackup() {
+    if (_checkedAutoBackup) return;
+    _checkedAutoBackup = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(
+        ref
+            .read(autoBackupServiceProvider)
+            .runIfDue(ref.read(ledgerBackupProducerProvider)),
+      );
+    });
+  }
 
   /// Surfaces the "N invoices generated from recurring schedules" banner
   /// exactly once after the load-time materializer run.
@@ -50,7 +68,10 @@ final class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final asyncData = ref.watch(appDataProvider);
-    if (asyncData.hasValue) _maybeAnnounceRecurringRun();
+    if (asyncData.hasValue) {
+      _maybeAnnounceRecurringRun();
+      _maybeRunAutoBackup();
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard')),
