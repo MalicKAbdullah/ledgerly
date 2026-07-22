@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
+import 'package:core_update/core_update.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -141,6 +142,7 @@ final class _DashboardBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
+        const _UpdateCard(),
         Row(
           children: [
             Expanded(
@@ -327,6 +329,28 @@ final class _StatCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Update available" card, shown when a newer GitHub release exists and the
+/// user hasn't dismissed it this session.
+class _UpdateCard extends ConsumerWidget {
+  const _UpdateCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final info = ref.watch(updateCheckProvider).valueOrNull;
+    final dismissed = ref.watch(updateDismissedProvider);
+    if (info == null || dismissed) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: UpdateBanner(
+        info: info,
+        onUpdate: () => ref.read(updateServiceProvider).openDownload(info),
+        onDismiss: () =>
+            ref.read(updateDismissedProvider.notifier).state = true,
       ),
     );
   }
