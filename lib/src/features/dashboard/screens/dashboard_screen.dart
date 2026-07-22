@@ -25,6 +25,21 @@ final class DashboardScreen extends ConsumerStatefulWidget {
 final class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _checkedRecurringRun = false;
   bool _checkedAutoBackup = false;
+  bool _checkedInvoiceNotify = false;
+
+  /// Posts an invoice-reminder notification once per open when any sent
+  /// invoices are overdue or due soon (deduped to once a day internally).
+  void _maybeNotifyInvoices() {
+    if (_checkedInvoiceNotify) return;
+    _checkedInvoiceNotify = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final data = ref.read(appDataProvider).valueOrNull;
+      if (data == null) return;
+      unawaited(
+        ref.read(invoiceNotifierProvider).checkOnOpen(data, DateTime.now()),
+      );
+    });
+  }
 
   /// Runs a scheduled backup once per app open, when one is due (F-4 auto-backup).
   /// Silent and fire-and-forget; failures are recorded and shown in Settings.
@@ -72,6 +87,7 @@ final class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (asyncData.hasValue) {
       _maybeAnnounceRecurringRun();
       _maybeRunAutoBackup();
+      _maybeNotifyInvoices();
     }
 
     return Scaffold(

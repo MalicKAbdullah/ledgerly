@@ -22,6 +22,7 @@ final class InvoicesScreen extends ConsumerStatefulWidget {
 
 final class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
   _InvoiceFilter _filter = _InvoiceFilter.all;
+  String _search = '';
 
   Future<void> _exportCsv() async {
     final data = ref.read(appDataProvider).valueOrNull;
@@ -90,8 +91,34 @@ final class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
             };
           }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+          final q = _search.trim().toLowerCase();
+          final shown = q.isEmpty
+              ? invoices
+              : invoices.where((i) {
+                  final client =
+                      data.clientById(i.clientId)?.name.toLowerCase() ?? '';
+                  return i.number.toLowerCase().contains(q) ||
+                      client.contains(q);
+                }).toList();
+
           return Column(
             children: [
+              if (data.invoices.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    0,
+                  ),
+                  child: TextField(
+                    onChanged: (v) => setState(() => _search = v),
+                    decoration: const InputDecoration(
+                      hintText: 'Search invoice # or client',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                ),
               SizedBox(
                 height: 48,
                 child: ListView(
@@ -113,12 +140,14 @@ final class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
                 ),
               ),
               Expanded(
-                child: invoices.isEmpty
+                child: shown.isEmpty
                     ? VaultEmptyState(
                         icon: Icons.receipt_long_outlined,
                         message: data.invoices.isEmpty
                             ? 'No invoices yet.\nTap + to create your first '
                                   'invoice.'
+                            : q.isNotEmpty
+                            ? 'No invoices match "$_search".'
                             : 'No ${_filterLabel(_filter).toLowerCase()} '
                                   'invoices.',
                       )
@@ -129,11 +158,11 @@ final class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
                           AppSpacing.md,
                           96,
                         ),
-                        itemCount: invoices.length,
+                        itemCount: shown.length,
                         separatorBuilder: (_, _) =>
                             const SizedBox(height: AppSpacing.sm),
                         itemBuilder: (context, index) {
-                          final invoice = invoices[index];
+                          final invoice = shown[index];
                           return _DismissibleInvoice(
                             invoice: invoice,
                             clientName:

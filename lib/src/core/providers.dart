@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:core_backup/core_backup.dart';
 import 'package:core_crypto/core_crypto.dart';
 import 'package:core_lock/core_lock.dart';
+import 'package:core_notify/core_notify.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:core_update/core_update.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import 'package:ledgerly/src/core/storage/data_key_store.dart';
 import 'package:ledgerly/src/core/storage/ledger_store.dart';
 import 'package:ledgerly/src/core/storage/vault_file.dart';
 import 'package:ledgerly/src/features/backup/services/backup_service.dart';
+import 'package:ledgerly/src/features/notifications/invoice_notifier.dart';
 
 /// Platform secure storage (keychain/keystore). Tests override this with an
 /// in-memory fake — no platform channels are touched in unit tests.
@@ -137,3 +139,15 @@ final updateCheckProvider = FutureProvider<UpdateInfo?>((ref) async {
 
 /// Session-only dismissal of the update banner.
 final updateDismissedProvider = StateProvider<bool>((_) => false);
+
+// -- Notifications (core_notify) ------------------------------------------
+
+/// Overridden in main() with an initialized [LocalNotify].
+final notifyProvider = Provider<INotify>((_) => const NoopNotify());
+
+final invoiceNotifierProvider = Provider<InvoiceNotifier>(
+  (ref) => InvoiceNotifier(
+    notify: ref.watch(notifyProvider),
+    storage: ref.watch(secureStorageProvider),
+  ),
+);

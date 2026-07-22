@@ -24,6 +24,7 @@ final class ExpensesScreen extends ConsumerStatefulWidget {
 
 final class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   ExpenseCategory? _filter;
+  String _search = '';
 
   Future<void> _exportCsv() async {
     final data = ref.read(appDataProvider).valueOrNull;
@@ -78,14 +79,37 @@ final class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       body: AsyncView<AppData>(
         value: asyncData,
         builder: (data) {
+          final q = _search.trim().toLowerCase();
           final expenses =
               data.expenses
                   .where((e) => _filter == null || e.category == _filter)
+                  .where(
+                    (e) =>
+                        q.isEmpty ||
+                        e.description.toLowerCase().contains(q) ||
+                        e.note.toLowerCase().contains(q),
+                  )
                   .toList()
                 ..sort((a, b) => b.date.compareTo(a.date));
 
           return Column(
             children: [
+              if (data.expenses.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    0,
+                  ),
+                  child: TextField(
+                    onChanged: (v) => setState(() => _search = v),
+                    decoration: const InputDecoration(
+                      hintText: 'Search description or note',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                ),
               SizedBox(
                 height: 48,
                 child: ListView(
@@ -122,7 +146,10 @@ final class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                         message: data.expenses.isEmpty
                             ? 'No expenses yet.\nTap + to record your first '
                                   'business cost.'
-                            : 'No ${_filter?.label.toLowerCase()} expenses.',
+                            : q.isNotEmpty
+                            ? 'No expenses match "$_search".'
+                            : 'No ${_filter?.label.toLowerCase()} '
+                                  'expenses.',
                       )
                     : _GroupedExpenseList(
                         expenses: expenses,
