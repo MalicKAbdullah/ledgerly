@@ -1,9 +1,10 @@
+import 'package:core_lock/core_lock.dart';
 import 'package:core_theme/core_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ledgerly/src/core/router.dart';
 import 'package:ledgerly/src/features/onboarding/onboarding_screen.dart';
-import 'package:ledgerly/src/features/security/widgets/lock_gate.dart';
+import 'package:ledgerly/src/features/security/providers/lock_providers.dart';
 
 final class LedgerlyApp extends ConsumerWidget {
   const LedgerlyApp({super.key});
@@ -22,8 +23,10 @@ final class LedgerlyApp extends ConsumerWidget {
       // The app lock sits above the router so no route can render while
       // the gate is engaged (and navigation state survives a re-lock);
       // the one-time onboarding intro sits just inside it.
-      builder: (context, child) =>
-          LockGate(child: OnboardingGate(child: child)),
+      builder: (context, child) => AppLockGate(
+        controller: ref.watch(lockControllerProvider),
+        child: OnboardingGate(child: child),
+      ),
       routerConfig: ref.watch(routerProvider),
     );
   }

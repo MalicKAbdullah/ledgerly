@@ -4,13 +4,13 @@ import 'dart:typed_data';
 
 import 'package:core_backup/core_backup.dart';
 import 'package:core_crypto/core_crypto.dart';
+import 'package:core_lock/core_lock.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:ledgerly/src/core/clock.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/data/app_data_notifier.dart';
-import 'package:ledgerly/src/core/security/device_auth.dart';
 import 'package:ledgerly/src/core/security/key_derivation.dart';
 import 'package:ledgerly/src/core/storage/data_key_store.dart';
 import 'package:ledgerly/src/core/storage/ledger_store.dart';
@@ -26,12 +26,17 @@ final secureStorageProvider = Provider<ISecureStorage>(
 /// Wall clock. Tests override with a fake to drive the app-lock window.
 final clockProvider = Provider<Clock>((ref) => const SystemClock());
 
-/// Platform authentication prompt for the app lock. The real local_auth
+/// Platform biometric prompt for the app lock. The real local_auth
 /// implementation is constructed only in main(); tests inject fakes.
 final deviceAuthProvider = Provider<IDeviceAuth>(
   (ref) => throw UnimplementedError(
     'deviceAuthProvider must be overridden in main() or with a test fake',
   ),
+);
+
+/// Argon2id verifier for the app-lock fallback password.
+final passwordHasherProvider = Provider<IPasswordHasher>(
+  (ref) => const Argon2PasswordHasher(),
 );
 
 /// Encrypted vault file location. Tests override with an in-memory fake.
@@ -76,9 +81,8 @@ final backupServiceProvider = Provider<BackupService>(
 /// Backup destination folder (shared engine). Android uses the Storage Access
 /// Framework so a Google Drive folder can be picked; iOS uses app documents.
 final backupFolderProvider = Provider<IBackupFolder>(
-  (ref) => Platform.isAndroid
-      ? SafBackupFolder()
-      : const AppDocumentsBackupFolder(),
+  (ref) =>
+      Platform.isAndroid ? SafBackupFolder() : const AppDocumentsBackupFolder(),
 );
 
 /// Scheduled auto-backup engine (shared core_backup), namespaced to Ledgerly.

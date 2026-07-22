@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:core_storage/core_storage.dart';
 import 'package:ledgerly/src/core/clock.dart';
-import 'package:ledgerly/src/core/security/device_auth.dart';
 import 'package:ledgerly/src/core/security/key_derivation.dart';
 import 'package:ledgerly/src/core/storage/vault_file.dart';
 import 'package:ledgerly/src/features/clients/models/client.dart';
@@ -47,30 +46,6 @@ final class FakeVaultFile implements IVaultFile {
   Future<void> write(Uint8List bytes) async {
     this.bytes = Uint8List.fromList(bytes);
     writeCount++;
-  }
-}
-
-/// Scriptable [IDeviceAuth] — flip [available] / [authResult] per test, or
-/// set [onAuthenticate] to control timing (e.g. via a Completer).
-final class FakeDeviceAuth implements IDeviceAuth {
-  FakeDeviceAuth({this.available = true, this.authResult = true});
-
-  bool available;
-  bool authResult;
-  int authCalls = 0;
-  String? lastReason;
-  Future<bool> Function()? onAuthenticate;
-
-  @override
-  Future<bool> canAuthenticate() async => available;
-
-  @override
-  Future<bool> authenticate({required String reason}) async {
-    authCalls++;
-    lastReason = reason;
-    final handler = onAuthenticate;
-    if (handler != null) return handler();
-    return authResult;
   }
 }
 
