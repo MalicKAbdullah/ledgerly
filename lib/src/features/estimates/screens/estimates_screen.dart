@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/providers.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
+import 'package:ledgerly/src/core/widgets/filter_bar.dart';
 import 'package:ledgerly/src/features/estimates/models/estimate.dart';
 import 'package:ledgerly/src/features/estimates/widgets/estimate_widgets.dart';
 
@@ -53,59 +54,52 @@ final class _EstimatesScreenState extends ConsumerState<EstimatesScreen> {
 
           return Column(
             children: [
-              SizedBox(
-                height: 48,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                  ),
-                  children: [
-                    for (final filter in _EstimateFilter.values)
-                      Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.sm),
-                        child: FilterChip(
-                          label: Text(_filterLabel(filter)),
-                          selected: _filter == filter,
-                          onSelected: (_) => setState(() => _filter = filter),
-                        ),
-                      ),
-                  ],
+              if (data.estimates.isNotEmpty)
+                FilterBar<_EstimateFilter>(
+                  values: _EstimateFilter.values,
+                  selected: _filter,
+                  label: _filterLabel,
+                  onSelected: (f) => setState(() => _filter = f),
                 ),
-              ),
               Expanded(
                 child: estimates.isEmpty
-                    ? VaultEmptyState(
+                    ? AppEmptyState(
                         icon: Icons.request_quote_outlined,
-                        message: data.estimates.isEmpty
-                            ? 'No estimates yet.\nTap + to quote your next '
-                                  'project — accepted estimates convert to '
-                                  'invoices in one tap.'
+                        title: data.estimates.isEmpty
+                            ? 'No estimates yet'
                             : 'No ${_filterLabel(_filter).toLowerCase()} '
-                                  'estimates.',
+                                  'estimates',
+                        message: data.estimates.isEmpty
+                            ? 'Tap + to quote your next project. Accepted '
+                                  'estimates convert to invoices in one tap.'
+                            : null,
                       )
-                    : ListView.separated(
+                    : ListView(
                         padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          AppSpacing.sm,
-                          AppSpacing.md,
+                          AppSpacing.gutter,
+                          AppSpacing.xs,
+                          AppSpacing.gutter,
                           96,
                         ),
-                        itemCount: estimates.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppSpacing.sm),
-                        itemBuilder: (context, index) {
-                          final estimate = estimates[index];
-                          return EstimateTile(
-                            estimate: estimate,
-                            clientName:
-                                data.clientById(estimate.clientId)?.name ??
-                                'Unknown',
-                            onTap: () => context.go(
-                              '/invoices/estimates/${estimate.id}',
-                            ),
-                          );
-                        },
+                        children: [
+                          RowGroup(
+                            separatorIndent: AppSpacing.md,
+                            children: [
+                              for (final estimate in estimates)
+                                EstimateTile(
+                                  estimate: estimate,
+                                  clientName:
+                                      data
+                                          .clientById(estimate.clientId)
+                                          ?.name ??
+                                      'Unknown',
+                                  onTap: () => context.go(
+                                    '/invoices/estimates/${estimate.id}',
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
               ),
             ],

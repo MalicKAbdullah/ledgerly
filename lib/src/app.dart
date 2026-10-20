@@ -14,11 +14,8 @@ final class LedgerlyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Ledgerly',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.build(Brightness.light, accent: AppColors.indigoAccent),
-      darkTheme: AppTheme.build(
-        Brightness.dark,
-        accent: AppColors.indigoAccent,
-      ),
+      theme: AppTheme.build(Brightness.light, accent: AppAccents.ledgerly),
+      darkTheme: AppTheme.build(Brightness.dark, accent: AppAccents.ledgerly),
       themeMode: ThemeMode.system,
       // The app lock sits above the router so no route can render while
       // the gate is engaged (and navigation state survives a re-lock);

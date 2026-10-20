@@ -33,8 +33,9 @@ final class InvoicePreviewScreen extends ConsumerWidget {
         final invoice = data.invoiceById(invoiceId);
         if (invoice == null) {
           return const Scaffold(
-            body: VaultEmptyState(
+            body: AppEmptyState(
               icon: Icons.receipt_long_outlined,
+              title: 'Invoice not found',
               message: 'This invoice no longer exists.',
             ),
           );
@@ -124,7 +125,6 @@ final class _DetailBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final client = data.clientById(invoice.clientId);
     final notifier = ref.read(appDataProvider.notifier);
     final isPaid = invoice.status == InvoiceStatus.paid;
@@ -153,7 +153,12 @@ final class _DetailBody extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          AppSpacing.sm,
+          AppSpacing.gutter,
+          AppSpacing.xl,
+        ),
         children: [
           InvoiceHeaderCard(invoice: invoice, client: client),
           const SizedBox(height: AppSpacing.md),
@@ -165,7 +170,7 @@ final class _DetailBody extends ConsumerWidget {
                   label: 'Payment',
                   onTap: () => _recordPayment(context, ref),
                 ),
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.smd),
               ],
               if (invoice.status == InvoiceStatus.sent) ...[
                 QuickAction(
@@ -173,14 +178,14 @@ final class _DetailBody extends ConsumerWidget {
                   label: 'Remind',
                   onTap: () => _sendReminder(context),
                 ),
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.smd),
               ],
               QuickAction(
                 icon: Icons.copy_outlined,
                 label: 'Duplicate',
                 onTap: () => _duplicate(context, ref),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.smd),
               QuickAction(
                 icon: Icons.ios_share,
                 label: 'Share PDF',
@@ -202,13 +207,12 @@ final class _DetailBody extends ConsumerWidget {
                   notifier.setInvoiceStatus(invoice.id, InvoiceStatus.paid),
             ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Items', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
+          const SectionHeader(title: 'Items'),
           InvoiceItemsCard(invoice: invoice),
           if (invoice.payments.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            Text('Payments', style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.lg),
+            const SectionHeader(title: 'Payments'),
             PaymentHistoryCard(
               invoice: invoice,
               onRemove: (payment) =>
@@ -216,21 +220,19 @@ final class _DetailBody extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
-          Text('PDF template', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
+          const SectionHeader(title: 'PDF template'),
           TemplatePicker(
             selected: invoice.template,
             onChanged: (template) =>
                 notifier.setInvoiceTemplate(invoice.id, template),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Activity', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
+          const SectionHeader(title: 'Activity'),
           VaultCard(child: InvoiceTimeline(invoice: invoice)),
           if (invoice.notes.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            Text('Notes', style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.lg),
+            const SectionHeader(title: 'Notes'),
             VaultCard(child: Text(invoice.notes)),
           ],
           const SizedBox(height: AppSpacing.xl),

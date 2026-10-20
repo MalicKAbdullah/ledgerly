@@ -30,8 +30,9 @@ final class ClientDetailScreen extends ConsumerWidget {
         final client = data.clientById(clientId);
         if (client == null) {
           return const Scaffold(
-            body: VaultEmptyState(
+            body: AppEmptyState(
               icon: Icons.person_off_outlined,
+              title: 'Client not found',
               message: 'This client no longer exists.',
             ),
           );
@@ -92,7 +93,7 @@ final class _DetailBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    final c = SuiteColors.of(context);
     final invoices = data.invoicesForClient(client.id)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -143,106 +144,103 @@ final class _DetailBody extends ConsumerWidget {
         label: const Text('Invoice'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          AppSpacing.sm,
+          AppSpacing.gutter,
+          96,
+        ),
         children: [
           VaultCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (client.company.isNotEmpty)
-                  _infoRow(theme, Icons.business_outlined, client.company),
+                  _infoRow(c, Icons.business_outlined, client.company),
                 if (client.email.isNotEmpty)
-                  _infoRow(theme, Icons.email_outlined, client.email),
+                  _infoRow(c, Icons.email_outlined, client.email),
                 if (client.address.isNotEmpty)
-                  _infoRow(theme, Icons.place_outlined, client.address),
+                  _infoRow(c, Icons.place_outlined, client.address),
                 if (client.notes.isNotEmpty)
-                  _infoRow(theme, Icons.notes_outlined, client.notes),
+                  _infoRow(c, Icons.notes_outlined, client.notes),
                 if (client.company.isEmpty &&
                     client.email.isEmpty &&
                     client.address.isEmpty &&
                     client.notes.isEmpty)
-                  Text('No details yet.', style: theme.textTheme.bodySmall),
+                  Text(
+                    'No details yet.',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: c.textSecondary,
+                    ),
+                  ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.smd),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: VaultCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Total billed', style: theme.textTheme.labelSmall),
-                      const SizedBox(height: 4),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          joined(billed),
-                          style: AppTextStyles.number.copyWith(
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                child: MetricCard(
+                  label: 'Total billed',
+                  value: _figure(joined(billed)),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.smd),
               Expanded(
-                child: VaultCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Outstanding', style: theme.textTheme.labelSmall),
-                      const SizedBox(height: 4),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          joined(outstanding),
-                          style: AppTextStyles.number.copyWith(
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                child: MetricCard(
+                  label: 'Outstanding',
+                  value: _figure(joined(outstanding)),
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Invoices', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
+          const SectionHeader(title: 'Invoices'),
           if (invoices.isEmpty)
-            const VaultEmptyState(
+            const AppEmptyState(
               icon: Icons.receipt_long_outlined,
+              title: 'No invoices yet',
               message: 'No invoices for this client yet.',
+              compact: true,
             )
           else
-            for (final invoice in invoices) ...[
-              InvoiceTile(
-                invoice: invoice,
-                clientName: client.name,
-                onTap: () => context.go('/invoices/${invoice.id}'),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-          const SizedBox(height: 80),
+            RowGroup(
+              separatorIndent: InvoiceTile.separatorIndent,
+              children: [
+                for (final invoice in invoices)
+                  InvoiceTile(
+                    invoice: invoice,
+                    clientName: client.name,
+                    onTap: () => context.go('/invoices/${invoice.id}'),
+                  ),
+              ],
+            ),
         ],
       ),
     );
   }
 
-  Widget _infoRow(ThemeData theme, IconData icon, String text) {
+  Widget _figure(String text) => FittedBox(
+    fit: BoxFit.scaleDown,
+    alignment: Alignment.centerLeft,
+    child: Text(text, style: AppTextStyles.numberMedium),
+  );
+
+  Widget _infoRow(SuiteColors c, IconData icon, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
+          Icon(icon, size: 18, color: c.textSecondary),
+          const SizedBox(width: AppSpacing.smd),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.bodyMedium.copyWith(color: c.textPrimary),
+            ),
+          ),
         ],
       ),
     );

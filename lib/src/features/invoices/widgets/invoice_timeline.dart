@@ -60,36 +60,26 @@ final class InvoiceTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final events = buildInvoiceEvents(invoice);
 
     return Column(
       children: [
         for (var i = 0; i < events.length; i++)
-          _TimelineRow(
-            event: events[i],
-            isLast: i == events.length - 1,
-            theme: theme,
-          ),
+          _TimelineRow(event: events[i], isLast: i == events.length - 1),
       ],
     );
   }
 }
 
 final class _TimelineRow extends StatelessWidget {
-  const _TimelineRow({
-    required this.event,
-    required this.isLast,
-    required this.theme,
-  });
+  const _TimelineRow({required this.event, required this.isLast});
 
   final InvoiceEvent event;
   final bool isLast;
-  final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = theme.colorScheme;
+    final c = SuiteColors.of(context);
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -100,15 +90,13 @@ final class _TimelineRow extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: scheme.primaryContainer,
+                  color: c.accentContainer,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(event.icon, size: 15, color: scheme.primary),
+                child: Icon(event.icon, size: 15, color: c.accent),
               ),
               if (!isLast)
-                Expanded(
-                  child: Container(width: 2, color: scheme.outlineVariant),
-                ),
+                Expanded(child: Container(width: 2, color: c.hairline)),
             ],
           ),
           const SizedBox(width: AppSpacing.md),
@@ -118,13 +106,20 @@ final class _TimelineRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(event.label, style: theme.textTheme.titleSmall),
+                  Text(
+                    event.label,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: c.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     event.detail.isEmpty
                         ? Formats.date(event.date)
                         : '${Formats.date(event.date)} · ${event.detail}',
-                    style: theme.textTheme.bodySmall,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: c.textSecondary,
+                    ),
                   ),
                 ],
               ),

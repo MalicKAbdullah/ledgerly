@@ -81,30 +81,35 @@ final class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _finish();
       return;
     }
-    _controller.nextPage(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-    );
+    _controller.nextPage(duration: AppMotion.base, curve: AppMotion.standard);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final c = SuiteColors.of(context);
     final isLast = _page == _pages.length - 1;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                child: TextButton(
-                  key: const Key('onboarding-skip'),
-                  onPressed: _finish,
-                  child: const Text('Skip'),
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.gutter,
+                AppSpacing.md,
+                AppSpacing.sm,
+                0,
+              ),
+              child: Row(
+                children: [
+                  const SuiteAppIcon(app: SuiteApp.ledgerly, size: 40),
+                  const Spacer(),
+                  TextButton(
+                    key: const Key('onboarding-skip'),
+                    onPressed: _finish,
+                    child: const Text('Skip'),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -116,37 +121,34 @@ final class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   final page = _pages[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xl,
+                      horizontal: AppSpacing.gutter,
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 96,
-                          height: 96,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                          child: Icon(
-                            page.icon,
-                            size: 44,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
+                        IconBadge(icon: page.icon, color: c.accent, size: 88),
                         const SizedBox(height: AppSpacing.xl),
                         Text(
+                          '0${index + 1} / 0${_pages.length}',
+                          style: AppTextStyles.overline.copyWith(
+                            color: c.accent,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
                           page.title,
-                          style: theme.textTheme.headlineSmall,
-                          textAlign: TextAlign.center,
+                          style: AppTextStyles.h1.copyWith(
+                            color: c.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           page.body,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                          style: AppTextStyles.body.copyWith(
+                            color: c.textSecondary,
+                            height: 1.5,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -159,21 +161,21 @@ final class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               children: [
                 for (var i = 0; i < _pages.length; i++)
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: AppMotion.fast,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: i == _page ? 22 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: i == _page
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
+                      color: i == _page ? c.accent : c.surfaceAlt,
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusPill,
+                      ),
                     ),
                   ),
               ],
             ),
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.gutter),
               child: VaultButton(
                 key: const Key('onboarding-next'),
                 label: isLast ? 'Get started' : 'Next',

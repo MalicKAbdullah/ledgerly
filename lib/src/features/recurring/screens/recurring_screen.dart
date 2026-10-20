@@ -32,30 +32,35 @@ final class RecurringScreen extends ConsumerWidget {
             ..sort((a, b) => a.nextRunDate.compareTo(b.nextRunDate));
 
           if (templates.isEmpty) {
-            return const VaultEmptyState(
+            return const AppEmptyState(
               icon: Icons.autorenew,
+              title: 'No recurring schedules',
               message:
-                  'No recurring schedules yet.\nOpen an invoice and '
-                  'choose "Make recurring", or tap + to build one from '
-                  'scratch. Due invoices are generated automatically when '
-                  'you open the app.',
+                  'Open an invoice and choose "Make recurring", or tap + to '
+                  'build one from scratch. Due invoices are generated '
+                  'automatically when you open the app.',
             );
           }
 
-          return ListView.separated(
+          return ListView(
             padding: const EdgeInsets.fromLTRB(
+              AppSpacing.gutter,
               AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
+              AppSpacing.gutter,
               96,
             ),
-            itemCount: templates.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-            itemBuilder: (context, index) => _TemplateTile(
-              template: templates[index],
-              clientName:
-                  data.clientById(templates[index].clientId)?.name ?? 'Unknown',
-            ),
+            children: [
+              RowGroup(
+                children: [
+                  for (final template in templates)
+                    _TemplateTile(
+                      template: template,
+                      clientName:
+                          data.clientById(template.clientId)?.name ?? 'Unknown',
+                    ),
+                ],
+              ),
+            ],
           );
         },
       ),
@@ -79,7 +84,6 @@ final class _TemplateTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final notifier = ref.read(appDataProvider.notifier);
     final end = template.endDate;
     final ended = end != null && template.nextRunDate.isAfter(end);
@@ -89,43 +93,17 @@ final class _TemplateTile extends ConsumerWidget {
         ? 'Ended ${Formats.date(end)}'
         : 'Next run ${Formats.date(template.nextRunDate)}';
 
-    return VaultCard(
+    return AppListRow(
       onTap: () => context.go('/invoices/recurring/${template.id}/edit'),
-      child: Row(
+      leading: IconBadge(
+        icon: Icons.autorenew,
+        color: SuiteColors.of(context).accent,
+      ),
+      title: '$clientName · ${_perRunTotal().format()}',
+      subtitle: '${template.describeSchedule()} · $statusLine',
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(AppSpacing.sm),
-            ),
-            child: Icon(
-              Icons.autorenew,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$clientName · ${_perRunTotal().format()} '
-                  '(before tax/discount)',
-                  style: theme.textTheme.titleSmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${template.describeSchedule()} · $statusLine',
-                  style: theme.textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
           Switch(
             key: Key('recurring-active-${template.id}'),
             value: template.active,

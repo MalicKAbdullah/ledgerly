@@ -263,24 +263,14 @@ final class _RecurringEditorScreenState
           const SizedBox(height: AppSpacing.lg),
           Text('Schedule', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: SegmentedButton<RecurrenceFrequency>(
-              key: const Key('recurring-frequency'),
-              segments: const [
-                ButtonSegment(
-                  value: RecurrenceFrequency.weekly,
-                  label: Text('Weekly'),
-                ),
-                ButtonSegment(
-                  value: RecurrenceFrequency.monthly,
-                  label: Text('Monthly'),
-                ),
-              ],
-              selected: {_frequency},
-              onSelectionChanged: (selection) =>
-                  setState(() => _frequency = selection.first),
-            ),
+          AppSegmentedControl<RecurrenceFrequency>(
+            key: const Key('recurring-frequency'),
+            segments: const [
+              AppSegment(value: RecurrenceFrequency.weekly, label: 'Weekly'),
+              AppSegment(value: RecurrenceFrequency.monthly, label: 'Monthly'),
+            ],
+            selected: _frequency,
+            onChanged: (frequency) => setState(() => _frequency = frequency),
           ),
           if (_frequency == RecurrenceFrequency.monthly) ...[
             const SizedBox(height: AppSpacing.md),

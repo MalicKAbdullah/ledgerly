@@ -78,7 +78,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Outstanding'), findsOneWidget);
-    expect(find.text(r'$250.00'), findsWidgets);
+    expect(find.textContaining('250.00', findRichText: true), findsWidgets);
     expect(find.text('Paid this month'), findsOneWidget);
     expect(find.text(r'$100.00'), findsWidgets);
     expect(find.text('Overdue (0)'), findsOneWidget);
@@ -87,7 +87,7 @@ void main() {
     // Recent invoices list shows both invoices with the client name.
     await tester.scrollUntilVisible(find.text('INV-2026-0001'), 200);
     expect(find.text('INV-2026-0001'), findsOneWidget);
-    expect(find.text('Ada Lovelace'), findsWidgets);
+    expect(find.textContaining('Ada Lovelace'), findsWidgets);
   });
 
   testWidgets(

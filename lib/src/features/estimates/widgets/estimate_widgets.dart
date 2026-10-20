@@ -2,6 +2,8 @@ import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:ledgerly/src/core/formats.dart';
+import 'package:ledgerly/src/core/widgets/amount_text.dart';
+import 'package:ledgerly/src/core/widgets/status_pill.dart';
 import 'package:ledgerly/src/features/estimates/models/estimate.dart';
 import 'package:ledgerly/src/features/estimates/services/estimate_math.dart';
 
@@ -15,63 +17,31 @@ final class EstimateStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
+    final c = SuiteColors.of(context);
     final expired = estimate.isExpired(DateTime.now());
 
     final (label, color, container) = switch ((expired, estimate.status)) {
-      (true, _) => (
-        'Expired',
-        AppColors.warning(brightness),
-        brightness == Brightness.dark
-            ? AppColors.warningContainerDark
-            : AppColors.warningContainerLight,
-      ),
-      (_, EstimateStatus.draft) => (
-        'Draft',
-        AppColors.textTertiary(brightness),
-        AppColors.surfaceAlt(brightness),
-      ),
-      (_, EstimateStatus.sent) => (
-        'Sent',
-        AppColors.info(brightness),
-        brightness == Brightness.dark
-            ? const Color(0xFF172554)
-            : const Color(0xFFDBEAFE),
-      ),
+      (true, _) => ('Expired', c.warning, c.warningContainer),
+      (_, EstimateStatus.draft) => ('Draft', c.textSecondary, c.surfaceAlt),
+      (_, EstimateStatus.sent) => ('Sent', c.info, c.infoContainer),
       (_, EstimateStatus.accepted) => (
         'Accepted',
-        AppColors.success(brightness),
-        brightness == Brightness.dark
-            ? AppColors.successContainerDark
-            : AppColors.successContainerLight,
+        c.positive,
+        c.positiveContainer,
       ),
       (_, EstimateStatus.declined) => (
         'Declined',
-        AppColors.error(brightness),
-        brightness == Brightness.dark
-            ? AppColors.errorContainerDark
-            : AppColors.errorContainerLight,
+        c.negative,
+        c.negativeContainer,
       ),
     };
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: container,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.caption.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
+    return StatusPill(label: label, color: color, container: container);
   }
 }
 
-/// List tile for one estimate: number, client, validity, total, status.
+/// Row for one estimate: number, client, validity, total, status. Place
+/// several inside a [RowGroup] with a zero-leading separator inset.
 final class EstimateTile extends StatelessWidget {
   const EstimateTile({
     required this.estimate,
@@ -88,42 +58,29 @@ final class EstimateTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final totals = EstimateMath.totals(estimate);
 
-    return VaultCard(
+    return AppListRow(
       onTap: onTap,
-      child: Row(
+      title: estimate.number,
+      subtitle:
+          '$clientName · valid until ${Formats.date(estimate.validUntil)}',
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        estimate.number,
-                        style: theme.textTheme.titleSmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    EstimateStatusChip(estimate: estimate),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$clientName · valid until '
-                  '${Formats.date(estimate.validUntil)}',
-                  style: theme.textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AmountText(
+                totals.total,
+                style: AppTextStyles.number,
+                alignment: AlignmentDirectional.centerEnd,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              EstimateStatusChip(estimate: estimate),
+            ],
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(totals.total.format(), style: AppTextStyles.number),
           ?trailing,
         ],
       ),

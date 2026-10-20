@@ -8,7 +8,9 @@ import 'package:ledgerly/src/core/formats.dart';
 import 'package:ledgerly/src/core/money/money.dart';
 import 'package:ledgerly/src/core/providers.dart';
 import 'package:ledgerly/src/core/share_service.dart';
+import 'package:ledgerly/src/core/widgets/amount_text.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
+import 'package:ledgerly/src/core/widgets/filter_bar.dart';
 import 'package:ledgerly/src/features/expenses/models/expense.dart';
 import 'package:ledgerly/src/features/expenses/services/expense_csv_service.dart';
 import 'package:ledgerly/src/features/expenses/widgets/expense_sheet.dart';
@@ -94,62 +96,41 @@ final class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
 
           return Column(
             children: [
-              if (data.expenses.isNotEmpty)
+              if (data.expenses.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
+                    AppSpacing.gutter,
                     AppSpacing.sm,
-                    AppSpacing.md,
+                    AppSpacing.gutter,
                     0,
                   ),
-                  child: TextField(
+                  child: AppSearchField(
+                    hint: 'Search description or note',
                     onChanged: (v) => setState(() => _search = v),
-                    decoration: const InputDecoration(
-                      hintText: 'Search description or note',
-                      prefixIcon: Icon(Icons.search),
-                    ),
                   ),
                 ),
-              SizedBox(
-                height: 48,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                  ),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: AppSpacing.sm),
-                      child: FilterChip(
-                        label: const Text('All'),
-                        selected: _filter == null,
-                        onSelected: (_) => setState(() => _filter = null),
-                      ),
-                    ),
-                    for (final category in ExpenseCategory.values)
-                      Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.sm),
-                        child: FilterChip(
-                          avatar: Icon(expenseCategoryIcon(category), size: 16),
-                          label: Text(category.label),
-                          selected: _filter == category,
-                          onSelected: (_) => setState(() => _filter = category),
-                        ),
-                      ),
-                  ],
+                FilterBar<ExpenseCategory?>(
+                  values: [null, ...ExpenseCategory.values],
+                  selected: _filter,
+                  label: (c) => c?.label ?? 'All',
+                  icon: (c) => c == null ? null : expenseCategoryIcon(c),
+                  onSelected: (c) => setState(() => _filter = c),
                 ),
-              ),
+              ],
               Expanded(
                 child: expenses.isEmpty
-                    ? VaultEmptyState(
+                    ? AppEmptyState(
                         icon: Icons.receipt_outlined,
+                        title: data.expenses.isEmpty
+                            ? 'No expenses yet'
+                            : q.isNotEmpty
+                            ? 'No matches'
+                            : 'No ${_filter?.label.toLowerCase()} expenses',
                         message: data.expenses.isEmpty
-                            ? 'No expenses yet.\nTap + to record your first '
-                                  'business cost.'
+                            ? 'Tap + to record your first business cost.'
                             : q.isNotEmpty
                             ? 'No expenses match "$_search".'
-                            : 'No ${_filter?.label.toLowerCase()} '
-                                  'expenses.',
+                            : null,
                       )
                     : _GroupedExpenseList(
                         expenses: expenses,
@@ -178,84 +159,62 @@ final class _GroupedExpenseList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final currency = data.profile.defaultCurrency;
 
-    // Single pass over the (already newest-first) expenses: sum each month's
-    // subtotal in the default currency and flatten into a lazy row list — a
-    // month header followed by its expenses. Avoids the previous O(n²) rescan
-    // per section and builds only the rows on screen via ListView.builder.
+    // Single pass over the (already newest-first) expenses: group by month and
+    // sum each month's subtotal in the default currency. One lazy list item
+    // per month keeps the build proportional to what is on screen.
+    final groups = <DateTime, List<Expense>>{};
     final monthTotals = <DateTime, Money>{};
-    final rows = <_ExpenseRow>[];
-    DateTime? currentMonth;
     for (final expense in expenses) {
       final month = DateTime(expense.date.year, expense.date.month);
-      if (month != currentMonth) {
-        currentMonth = month;
-        rows.add(_ExpenseRow.header(month));
-      }
+      (groups[month] ??= []).add(expense);
+      monthTotals[month] ??= Money.zero(currency);
       if (expense.currency == currency) {
-        monthTotals[month] =
-            (monthTotals[month] ?? Money.zero(currency)) + expense.amount;
-      } else {
-        monthTotals[month] ??= Money.zero(currency);
+        monthTotals[month] = monthTotals[month]! + expense.amount;
       }
-      rows.add(_ExpenseRow.tile(expense));
     }
+    final months = groups.keys.toList();
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 96),
-      itemCount: rows.length,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.gutter,
+        0,
+        AppSpacing.gutter,
+        96,
+      ),
+      itemCount: months.length,
       itemBuilder: (context, index) {
-        final row = rows[index];
-        final expense = row.expense;
-        if (expense == null) {
-          final month = row.month!;
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xs,
-              AppSpacing.md,
-              AppSpacing.xs,
-              AppSpacing.sm,
+        final month = months[index];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (index > 0) const SizedBox(height: AppSpacing.lg),
+            SectionHeader(
+              title: DateFormat.yMMMM().format(month),
+              trailing: AmountText(
+                monthTotals[month]!,
+                style: AppTextStyles.number,
+                alignment: AlignmentDirectional.centerEnd,
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            RowGroup(
               children: [
-                Text(
-                  DateFormat.yMMMM().format(month),
-                  style: theme.textTheme.titleSmall,
-                ),
-                Text(
-                  (monthTotals[month] ?? Money.zero(currency)).format(),
-                  style: theme.textTheme.titleSmall,
-                ),
+                for (final expense in groups[month]!)
+                  _ExpenseTile(
+                    expense: expense,
+                    clientName: expense.clientId == null
+                        ? null
+                        : data.clientById(expense.clientId!)?.name,
+                    onTap: () => onTap(expense),
+                  ),
               ],
             ),
-          );
-        }
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: _ExpenseTile(
-            expense: expense,
-            clientName: expense.clientId == null
-                ? null
-                : data.clientById(expense.clientId!)?.name,
-            onTap: () => onTap(expense),
-          ),
+          ],
         );
       },
     );
   }
-}
-
-/// One row in the flattened expense list: either a month [header] or an
-/// expense [tile]. Exactly one of [month]/[expense] is non-null.
-final class _ExpenseRow {
-  const _ExpenseRow.header(this.month) : expense = null;
-  const _ExpenseRow.tile(Expense this.expense) : month = null;
-
-  final DateTime? month;
-  final Expense? expense;
 }
 
 final class _ExpenseTile extends ConsumerWidget {
@@ -271,51 +230,24 @@ final class _ExpenseTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final subtitleParts = [
       Formats.date(expense.date),
       ?clientName,
       if (expense.note.isNotEmpty) expense.note,
     ];
 
-    return VaultCard(
+    return AppListRow(
       onTap: onTap,
-      child: Row(
+      leading: IconBadge(
+        icon: expenseCategoryIcon(expense.category),
+        color: SuiteColors.of(context).accent,
+      ),
+      title: expense.description,
+      subtitle: subtitleParts.join(' · '),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(AppSpacing.sm),
-            ),
-            child: Icon(
-              expenseCategoryIcon(expense.category),
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  expense.description,
-                  style: theme.textTheme.titleSmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitleParts.join(' · '),
-                  style: theme.textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(expense.amount.format(), style: AppTextStyles.number),
+          AmountText(expense.amount, style: AppTextStyles.number),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, size: 20),
             onSelected: (action) async {

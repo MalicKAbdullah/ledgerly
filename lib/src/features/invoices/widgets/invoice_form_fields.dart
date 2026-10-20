@@ -150,21 +150,18 @@ final class LineItemsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final c = SuiteColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Line items', style: theme.textTheme.titleLarge),
-            TextButton.icon(
-              key: const Key('add-line-item'),
-              onPressed: onAdd,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add item'),
-            ),
-          ],
+        SectionHeader(
+          title: 'Line items',
+          trailing: TextButton.icon(
+            key: const Key('add-line-item'),
+            onPressed: onAdd,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Add item'),
+          ),
         ),
         if (items.isEmpty)
           VaultCard(
@@ -173,49 +170,43 @@ final class LineItemsSection extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 child: Text(
                   'No items yet. Tap "Add item" to bill your work.',
-                  style: theme.textTheme.bodySmall,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: c.textSecondary,
+                  ),
                 ),
               ),
             ),
-          ),
-        for (final item in items) ...[
-          VaultCard(
-            onTap: () => onEdit(item),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          )
+        else
+          RowGroup(
+            separatorIndent: AppSpacing.md,
+            children: [
+              for (final item in items)
+                AppListRow(
+                  onTap: () => onEdit(item),
+                  title: item.description,
+                  subtitle:
+                      '${formatQuantityMilli(item.quantityMilli)} × '
+                      '${item.unitPrice(currency).format()}',
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        item.description,
-                        style: theme.textTheme.labelLarge,
-                        overflow: TextOverflow.ellipsis,
+                        item.total(currency).format(),
+                        style: AppTextStyles.number.copyWith(
+                          color: c.textPrimary,
+                        ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${formatQuantityMilli(item.quantityMilli)} × '
-                        '${item.unitPrice(currency).format()}',
-                        style: theme.textTheme.bodySmall,
+                      IconButton(
+                        tooltip: 'Remove item',
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        onPressed: () => onDelete(item),
                       ),
                     ],
                   ),
                 ),
-                Text(
-                  item.total(currency).format(),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  onPressed: () => onDelete(item),
-                ),
-              ],
-            ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
       ],
     );
   }
@@ -275,15 +266,14 @@ final class TaxDiscountSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        SegmentedButton<DiscountType>(
+        AppSegmentedControl<DiscountType>(
           segments: const [
-            ButtonSegment(value: DiscountType.none, label: Text('No discount')),
-            ButtonSegment(value: DiscountType.percent, label: Text('Percent')),
-            ButtonSegment(value: DiscountType.fixed, label: Text('Fixed')),
+            AppSegment(value: DiscountType.none, label: 'No discount'),
+            AppSegment(value: DiscountType.percent, label: 'Percent'),
+            AppSegment(value: DiscountType.fixed, label: 'Fixed'),
           ],
-          selected: {discountType},
-          onSelectionChanged: (selection) =>
-              onDiscountTypeChanged(selection.first),
+          selected: discountType,
+          onChanged: onDiscountTypeChanged,
         ),
       ],
     );

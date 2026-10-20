@@ -46,7 +46,7 @@ final class _LogoSectionState extends State<LogoSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final c = SuiteColors.of(context);
     final logoBytes = widget.profile.logoBytes;
 
     return VaultCard(
@@ -56,15 +56,12 @@ final class _LogoSectionState extends State<LogoSection> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
+              color: c.surfaceAlt,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
             clipBehavior: Clip.antiAlias,
             child: logoBytes == null
-                ? Icon(
-                    Icons.storefront_outlined,
-                    color: theme.colorScheme.primary,
-                  )
+                ? Icon(Icons.storefront_outlined, color: c.accent)
                 : Image.memory(logoBytes, fit: BoxFit.contain),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -72,13 +69,15 @@ final class _LogoSectionState extends State<LogoSection> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Business logo', style: theme.textTheme.titleSmall),
+                Text('Business logo', style: AppTextStyles.h4),
                 const SizedBox(height: 2),
                 Text(
                   logoBytes == null
                       ? 'Appears at the top of your invoices.'
                       : 'Shown on your invoice PDFs.',
-                  style: theme.textTheme.bodySmall,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: c.textSecondary,
+                  ),
                 ),
               ],
             ),

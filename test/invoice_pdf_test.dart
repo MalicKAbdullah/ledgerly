@@ -56,7 +56,7 @@ void main() {
   group('all three templates render a fully-featured invoice', () {
     for (final template in InvoiceTemplateId.values) {
       test('${template.name} builds valid PDF bytes', () async {
-        // Unicode client name — exercises the embedded Inter font.
+        // Unicode client name — exercises the embedded Mona Sans font.
         final client = makeClient(name: 'Žofia Müllerová');
         final bytes = await InvoicePdfService.render(
           InvoicePdfRequest(
