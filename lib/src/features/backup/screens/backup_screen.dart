@@ -141,7 +141,10 @@ final class _BackupScreenState extends ConsumerState<BackupScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Backup')),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gutter,
+          vertical: AppSpacing.md,
+        ),
         children: [
           Text('Export', style: theme.textTheme.titleLarge),
           const SizedBox(height: AppSpacing.xs),

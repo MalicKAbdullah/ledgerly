@@ -193,7 +193,7 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          VaultButton(label: 'Save Settings', onPressed: _save),
+          VaultButton(label: 'Save settings', onPressed: _save),
           const SizedBox(height: AppSpacing.lg),
           const SectionHeader(title: 'Invoice PDFs'),
           AppSegmentedControl<InvoiceTemplateId>(
@@ -248,7 +248,7 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: AppSpacing.md),
           VaultCard(
-            padding: const EdgeInsets.all(AppSpacing.smd),
+            padding: EdgeInsets.zero,
             child: AutoBackupSection(
               service: ref.watch(autoBackupServiceProvider),
               producer: ref.watch(ledgerBackupProducerProvider),
@@ -351,7 +351,7 @@ class _UpdateCheckTileState extends ConsumerState<_UpdateCheckTile> {
         SettingsTile(
           icon: Icons.system_update_alt,
           title: 'Check on open',
-          subtitle: 'Looks for a new release on GitHub',
+          subtitle: 'Asks GitHub for a newer release',
           trailing: Switch(
             value: autoCheck,
             onChanged: (v) async {
