@@ -22,7 +22,8 @@ PdfFontBytes loadTestFonts() {
 String _resolveFontsDir() {
   const local = '../../packages/core_theme/fonts';
   if (File('$local/MonaSans-Regular.ttf').existsSync()) return local;
-  final pubCache = Platform.environment['PUB_CACHE'] ??
+  final pubCache =
+      Platform.environment['PUB_CACHE'] ??
       '${Platform.environment['HOME']}/.pub-cache';
   final gitDir = Directory('$pubCache/git');
   if (gitDir.existsSync()) {
@@ -33,5 +34,7 @@ String _resolveFontsDir() {
       }
     }
   }
-  throw StateError('Could not locate core_theme Mona Sans fonts for PDF tests.');
+  throw StateError(
+    'Could not locate core_theme Mona Sans fonts for PDF tests.',
+  );
 }
