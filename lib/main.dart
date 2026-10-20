@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:core_lock/core_lock.dart';
 import 'package:core_notify/core_notify.dart';
+import 'package:core_theme/core_theme.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +31,10 @@ Future<void> main() async {
 
   // Local notifications (invoice reminders). Set up after the first frame is
   // scheduled; LocalNotify queues calls until it is ready.
-  final notify = LocalNotify();
+  final notify = LocalNotify(
+    smallIcon: 'ic_stat_notify',
+    accentColor: AppAccents.ledgerly.light,
+  );
 
   runApp(
     ProviderScope(
