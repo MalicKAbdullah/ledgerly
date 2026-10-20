@@ -1,5 +1,6 @@
 import 'package:core_lock/core_lock.dart';
 import 'package:core_theme/core_theme.dart';
+import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ledgerly/src/core/router.dart';
@@ -22,6 +23,7 @@ final class LedgerlyApp extends ConsumerWidget {
       // the one-time onboarding intro sits just inside it.
       builder: (context, child) => AppLockGate(
         controller: ref.watch(lockControllerProvider),
+        appMark: const SuiteAppIcon(app: SuiteApp.ledgerly, size: 56),
         child: OnboardingGate(child: child),
       ),
       routerConfig: ref.watch(routerProvider),
