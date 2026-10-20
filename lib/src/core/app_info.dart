@@ -1,8 +1,14 @@
-/// App-level constants surfaced in the Settings "About" section.
-/// Keep [version] in sync with pubspec.yaml.
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+/// Static app identity constants.
 abstract final class AppInfo {
-  static const String version = '1.6.1';
   static const String privacyBlurb =
       'Your business data stays on this device and is encrypted. '
       'The only network use is the optional update check.';
 }
+
+/// Installed app version from the platform (pubspec `version`), read once.
+final appVersionProvider = FutureProvider<String>(
+  (ref) async => (await PackageInfo.fromPlatform()).version,
+);

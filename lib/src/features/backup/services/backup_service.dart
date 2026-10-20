@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:core_crypto/core_crypto.dart';
-import 'package:ledgerly/src/core/app_info.dart';
 import 'package:ledgerly/src/core/clock.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/security/key_derivation.dart';
@@ -35,13 +34,16 @@ final class BackupService {
   const BackupService({
     required IKeyDerivation keyDerivation,
     required CipherService cipher,
+    required Future<String> Function() appVersion,
     required Clock clock,
   }) : _kdf = keyDerivation,
        _cipher = cipher,
+       _appVersion = appVersion,
        _clock = clock;
 
   final IKeyDerivation _kdf;
   final CipherService _cipher;
+  final Future<String> Function() _appVersion;
   final Clock _clock;
 
   static const int formatVersion = 1;
@@ -64,7 +66,7 @@ final class BackupService {
     return jsonEncode({
       'formatVersion': formatVersion,
       'app': 'ledgerly',
-      'appVersion': AppInfo.version,
+      'appVersion': await _appVersion(),
       'createdAt': _clock.now().toIso8601String(),
       'clientCount': data.clients.length,
       'invoiceCount': data.invoices.length,
