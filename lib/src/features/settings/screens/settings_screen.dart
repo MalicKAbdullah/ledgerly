@@ -95,7 +95,6 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final data = ref.watch(appDataProvider).valueOrNull;
     if (data == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -103,62 +102,60 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _initFrom(data.profile);
     final profile = data.profile;
 
+    final c = SuiteColors.of(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          0,
+          AppSpacing.gutter,
+          AppSpacing.xl,
+        ),
         children: [
-          Text('Business profile', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Shown on every invoice you send.',
-            style: theme.textTheme.bodySmall,
+          const SectionHeader(
+            title: 'Business profile',
+            subtitle: 'Shown on every invoice you send.',
           ),
-          const SizedBox(height: AppSpacing.md),
           LogoSection(
             profile: profile,
             onLogoChanged: (logo) =>
                 _apply(_storedProfile.copyWith(logoBase64: logo)),
           ),
-          const SizedBox(height: AppSpacing.md),
-          VaultTextField(
-            label: 'Your name',
-            controller: _name,
-            hint: 'Jane Doe',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          VaultTextField(
+          const SizedBox(height: AppSpacing.smd),
+          AppTextField(label: 'Your name', controller: _name, hint: 'Jane Doe'),
+          const SizedBox(height: AppSpacing.smd),
+          AppTextField(
             label: 'Business name',
             controller: _businessName,
             hint: 'Jane Doe Studio',
           ),
-          const SizedBox(height: AppSpacing.md),
-          VaultTextField(
+          const SizedBox(height: AppSpacing.smd),
+          AppTextField(
             label: 'Address',
             controller: _address,
             hint: '123 Main St, Springfield',
           ),
-          const SizedBox(height: AppSpacing.md),
-          VaultTextField(
+          const SizedBox(height: AppSpacing.smd),
+          AppTextField(
             label: 'Email',
             controller: _email,
             hint: 'jane@studio.dev',
             keyboardType: TextInputType.emailAddress,
           ),
-          const SizedBox(height: AppSpacing.md),
-          VaultTextField(
+          const SizedBox(height: AppSpacing.smd),
+          AppTextField(
             label: 'Tax ID',
             controller: _taxId,
             hint: 'e.g. VAT / EIN number',
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Invoice defaults', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.md),
-          Text('Default currency', style: AppTextStyles.label),
-          const SizedBox(height: AppSpacing.sm),
+          const SectionHeader(title: 'Invoice defaults'),
           DropdownButtonFormField<String>(
             key: const Key('default-currency'),
             initialValue: _currency,
+            decoration: const InputDecoration(labelText: 'Default currency'),
             items: [
               for (final code in {..._orderedCurrencies()})
                 DropdownMenuItem(
@@ -168,12 +165,12 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
             onChanged: (code) => setState(() => _currency = code ?? _currency),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.smd),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: VaultTextField(
+                child: AppTextField(
                   label: 'Default tax rate (%)',
                   controller: _taxRate,
                   hint: '7.5',
@@ -183,9 +180,9 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.smd),
               Expanded(
-                child: VaultTextField(
+                child: AppTextField(
                   label: 'Invoice prefix',
                   controller: _prefix,
                   hint: 'INV',
@@ -193,150 +190,106 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
           VaultButton(label: 'Save Settings', onPressed: _save),
           const SizedBox(height: AppSpacing.lg),
-          Text('Invoice PDFs', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.md),
-          Text('Default template', style: AppTextStyles.label),
-          const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            child: SegmentedButton<InvoiceTemplateId>(
-              key: const Key('default-template'),
-              segments: [
-                for (final template in InvoiceTemplateId.values)
-                  ButtonSegment(value: template, label: Text(template.label)),
-              ],
-              selected: {profile.defaultTemplate},
-              onSelectionChanged: (selection) => _apply(
-                _storedProfile.copyWith(defaultTemplate: selection.first),
-              ),
-            ),
+          const SectionHeader(title: 'Invoice PDFs'),
+          AppSegmentedControl<InvoiceTemplateId>(
+            key: const Key('default-template'),
+            segments: [
+              for (final template in InvoiceTemplateId.values)
+                AppSegment(value: template, label: template.label),
+            ],
+            selected: profile.defaultTemplate,
+            onChanged: (template) =>
+                _apply(_storedProfile.copyWith(defaultTemplate: template)),
           ),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             '${profile.defaultTemplate.description}. New invoices start with '
             'this look; you can switch it per invoice.',
-            style: theme.textTheme.bodySmall,
+            style: AppTextStyles.bodySmall.copyWith(color: c.textSecondary),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          SwitchListTile(
-            key: const Key('pdf-footer-toggle'),
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              '"Generated with Ledgerly" footer',
-              style: theme.textTheme.titleSmall,
-            ),
-            subtitle: Text(
-              'A small credit line at the bottom of each PDF.',
-              style: theme.textTheme.bodySmall,
-            ),
-            value: profile.showPdfFooter,
-            onChanged: (value) =>
-                _apply(_storedProfile.copyWith(showPdfFooter: value)),
+          const SizedBox(height: AppSpacing.md),
+          RowGroup(
+            children: [
+              SettingsTile(
+                key: const Key('pdf-footer-toggle'),
+                icon: Icons.short_text,
+                title: 'PDF footer',
+                subtitle: '"Generated with Ledgerly" credit line',
+                trailing: Switch(
+                  value: profile.showPdfFooter,
+                  onChanged: (value) =>
+                      _apply(_storedProfile.copyWith(showPdfFooter: value)),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.lg),
           const SecuritySection(),
           const SizedBox(height: AppSpacing.lg),
-          Text('Updates', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
+          const SectionHeader(title: 'Updates'),
           const _UpdateCheckTile(),
           const SizedBox(height: AppSpacing.lg),
-          Text('Backup', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.md),
-          VaultCard(
-            child: ListTile(
-              key: const Key('backup-tile'),
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppSpacing.sm),
-                ),
-                child: Icon(
-                  Icons.save_alt,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
+          const SectionHeader(title: 'Backup'),
+          RowGroup(
+            children: [
+              SettingsTile(
+                key: const Key('backup-tile'),
+                icon: Icons.save_alt,
+                title: 'Backup & restore',
+                subtitle: 'Encrypted .lybackup export and import',
+                onTap: () => context.push('/settings/backup'),
               ),
-              title: Text(
-                'Backup & restore',
-                style: theme.textTheme.titleSmall,
-              ),
-              subtitle: Text(
-                'Encrypted .lybackup file — export or import your whole '
-                'ledger.',
-                style: theme.textTheme.bodySmall,
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/settings/backup'),
-            ),
+            ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Automatic backup', style: theme.textTheme.titleSmall),
-          const SizedBox(height: AppSpacing.sm),
           VaultCard(
+            padding: const EdgeInsets.all(AppSpacing.smd),
             child: AutoBackupSection(
               service: ref.watch(autoBackupServiceProvider),
               producer: ref.watch(ledgerBackupProducerProvider),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('About', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.md),
+          const SectionHeader(title: 'About'),
           VaultCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(AppSpacing.sm),
+                    const SuiteAppIcon(app: SuiteApp.ledgerly, size: 44),
+                    const SizedBox(width: AppSpacing.smd),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Ledgerly', style: AppTextStyles.h4),
+                          Text(
+                            'Version ${AppInfo.version}',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: c.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Icon(
-                        Icons.receipt_long,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text('Ledgerly', style: theme.textTheme.titleSmall),
-                    const Spacer(),
-                    Text(
-                      'Version ${AppInfo.version}',
-                      style: theme.textTheme.bodySmall,
                     ),
                   ],
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                const SuiteEndorsement(),
                 const SizedBox(height: AppSpacing.md),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.lock_outline,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        AppInfo.privacyBlurb,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
+                Text(
+                  AppInfo.privacyBlurb,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: c.textSecondary,
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.xl),
         ],
       ),
     );
@@ -386,16 +339,13 @@ class _UpdateCheckTileState extends ConsumerState<_UpdateCheckTile> {
   @override
   Widget build(BuildContext context) {
     final autoCheck = ref.watch(updateAutoCheckProvider).valueOrNull ?? true;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Column(
-        children: [
-          SwitchListTile(
-            secondary: const Icon(Icons.system_update_alt),
-            title: const Text('Check for updates on open'),
-            subtitle: const Text(
-              'Looks for a new release on GitHub. Nothing is uploaded.',
-            ),
+    return RowGroup(
+      children: [
+        SettingsTile(
+          icon: Icons.system_update_alt,
+          title: 'Check on open',
+          subtitle: 'Looks for a new release on GitHub',
+          trailing: Switch(
             value: autoCheck,
             onChanged: (v) async {
               await ref
@@ -405,21 +355,20 @@ class _UpdateCheckTileState extends ConsumerState<_UpdateCheckTile> {
               ref.invalidate(updateCheckProvider);
             },
           ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.refresh),
-            title: const Text('Check now'),
-            trailing: _checking
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.chevron_right),
-            onTap: _checking ? null : _checkNow,
-          ),
-        ],
-      ),
+        ),
+        SettingsTile(
+          icon: Icons.refresh,
+          title: 'Check now',
+          trailing: _checking
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : null,
+          onTap: _checking ? null : _checkNow,
+        ),
+      ],
     );
   }
 }
