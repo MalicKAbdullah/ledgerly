@@ -1,4 +1,5 @@
 import 'package:core_backup/core_backup.dart';
+import 'package:core_lock/core_lock.dart';
 import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:ledgerly/src/core/app_info.dart';
 import 'package:ledgerly/src/core/money/money.dart';
 import 'package:ledgerly/src/core/providers.dart';
 import 'package:ledgerly/src/features/invoices/models/invoice_template.dart';
+import 'package:ledgerly/src/features/security/providers/lock_providers.dart';
 import 'package:ledgerly/src/features/settings/models/business_profile.dart';
 import 'package:ledgerly/src/features/settings/widgets/logo_section.dart';
 import 'package:ledgerly/src/features/settings/widgets/security_section.dart';
@@ -250,6 +252,11 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: AutoBackupSection(
               service: ref.watch(autoBackupServiceProvider),
               producer: ref.watch(ledgerBackupProducerProvider),
+              onRevealGate: () => confirmAppLockIdentity(
+                context,
+                ref.read(lockControllerProvider),
+                reason: 'Show your backup passphrase',
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
