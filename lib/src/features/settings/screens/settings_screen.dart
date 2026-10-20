@@ -275,7 +275,7 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         children: [
                           Text('Ledgerly', style: AppTextStyles.h4),
                           Text(
-                            'Version ${AppInfo.version}',
+                            'Version ${ref.watch(appVersionProvider).valueOrNull ?? ''}',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: c.textSecondary,
                             ),
