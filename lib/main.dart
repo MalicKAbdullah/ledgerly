@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:core_lock/core_lock.dart';
 import 'package:core_notify/core_notify.dart';
 import 'package:core_storage/core_storage.dart';
@@ -12,19 +14,23 @@ import 'package:ledgerly/src/features/security/providers/lock_providers.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Read the lock flags before the first frame so the app opens already
-  // locked (no unlocked flash on cold start).
-  const storage = SecureStorageImpl(FlutterSecureStorage());
+  // One bulk secure-storage read serves every launch read (lock flags, data
+  // key, preferences). Ledgerly is the only writer of its keys and holds the
+  // data key in memory for the session anyway.
+  final storage = await CachedSecureStorage.load(
+    const SecureStorageImpl(FlutterSecureStorage()),
+  );
+  // Read before the first frame so the app opens already locked (no
+  // unlocked flash on cold start).
   final lockEnabled = await LockController.readEnabled(storage, lockStorageKey);
   final biometricEnabled = await LockController.readBiometricEnabled(
     storage,
     lockStorageKey,
   );
 
-  // Local notifications (invoice reminders). Tapping just opens the app.
+  // Local notifications (invoice reminders). Set up after the first frame is
+  // scheduled; LocalNotify queues calls until it is ready.
   final notify = LocalNotify();
-  await notify.initialize(channels: InvoiceNotifier.channels, onSelect: (_) {});
-  await notify.requestPermission();
 
   runApp(
     ProviderScope(
@@ -39,5 +45,12 @@ Future<void> main() async {
       ],
       child: const LedgerlyApp(),
     ),
+  );
+
+  // Tapping a notification just opens the app.
+  unawaited(
+    notify
+        .initialize(channels: InvoiceNotifier.channels, onSelect: (_) {})
+        .then((_) => notify.requestPermission()),
   );
 }
