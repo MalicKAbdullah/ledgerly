@@ -44,68 +44,28 @@ final class PaymentHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final brightness = theme.brightness;
-    final success = AppColors.success(brightness);
-    final successContainer = brightness == Brightness.dark
-        ? AppColors.successContainerDark
-        : AppColors.successContainerLight;
+    final c = SuiteColors.of(context);
 
-    return VaultCard(
-      child: Column(
-        children: [
-          for (final payment in invoice.payments) ...[
-            InkWell(
-              onLongPress: () => _confirmRemove(context, payment),
-              borderRadius: BorderRadius.circular(AppSpacing.sm),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: successContainer,
-                        borderRadius: BorderRadius.circular(AppSpacing.sm),
-                      ),
-                      child: Icon(
-                        Icons.payments_outlined,
-                        size: 18,
-                        color: success,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            payment.method.label,
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          Text(
-                            payment.note.isEmpty
-                                ? Formats.date(payment.date)
-                                : '${Formats.date(payment.date)} · ${payment.note}',
-                            style: theme.textTheme.bodySmall,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      payment.amount(invoice.currency).format(),
-                      style: AppTextStyles.number.copyWith(color: success),
-                    ),
-                  ],
-                ),
-              ),
+    return RowGroup(
+      children: [
+        for (final payment in invoice.payments)
+          AppListRow(
+            onLongPress: () => _confirmRemove(context, payment),
+            leading: IconBadge(
+              icon: Icons.payments_outlined,
+              color: c.positive,
+              size: 36,
             ),
-            if (payment != invoice.payments.last) const Divider(height: 16),
-          ],
-        ],
-      ),
+            title: payment.method.label,
+            subtitle: payment.note.isEmpty
+                ? Formats.date(payment.date)
+                : '${Formats.date(payment.date)} · ${payment.note}',
+            trailing: Text(
+              payment.amount(invoice.currency).format(),
+              style: AppTextStyles.number.copyWith(color: c.positive),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/formats.dart';
 import 'package:ledgerly/src/core/providers.dart';
+import 'package:ledgerly/src/core/widgets/amount_text.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
 import 'package:ledgerly/src/features/estimates/models/estimate.dart';
 import 'package:ledgerly/src/features/estimates/services/estimate_math.dart';
@@ -31,8 +32,9 @@ final class EstimateDetailScreen extends ConsumerWidget {
         final estimate = data.estimateById(estimateId);
         if (estimate == null) {
           return const Scaffold(
-            body: VaultEmptyState(
+            body: AppEmptyState(
               icon: Icons.request_quote_outlined,
+              title: 'Estimate not found',
               message: 'This estimate no longer exists.',
             ),
           );
@@ -112,7 +114,6 @@ final class _DetailBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final client = data.clientById(estimate.clientId);
     final notifier = ref.read(appDataProvider.notifier);
     final totals = EstimateMath.totals(estimate);
@@ -138,59 +139,42 @@ final class _DetailBody extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          AppSpacing.sm,
+          AppSpacing.gutter,
+          AppSpacing.xl,
+        ),
         children: [
-          VaultCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          totals.total.format(),
-                          style: AppTextStyles.numberLarge.copyWith(
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
+          HeroMetricCard(
+            label: client == null
+                ? 'Unknown client'
+                : client.company.isEmpty
+                ? client.name
+                : '${client.name} — ${client.company}',
+            trailing: EstimateStatusChip(estimate: estimate),
+            value: AmountText(totals.total, style: AppTextStyles.display),
+            delta: estimate.isConverted
+                ? Flexible(
+                    child: Text(
+                      'Converted to invoice '
+                      '${estimate.convertedInvoiceNumber ?? ''}',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: SuiteColors.of(context).textSecondary,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    EstimateStatusChip(estimate: estimate),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  client == null
-                      ? 'Unknown client'
-                      : client.company.isEmpty
-                      ? client.name
-                      : '${client.name} — ${client.company}',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Issued ${Formats.date(estimate.issueDate)} · '
-                  'Valid until ${Formats.date(estimate.validUntil)}',
-                  style: theme.textTheme.bodySmall,
-                ),
-                if (estimate.isConverted) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Converted to invoice '
-                    '${estimate.convertedInvoiceNumber ?? ''}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+                  )
+                : null,
+            footer: [
+              StatTile(
+                label: 'Issued',
+                value: Formats.date(estimate.issueDate),
+              ),
+              StatTile(
+                label: 'Valid until',
+                value: Formats.date(estimate.validUntil),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
@@ -200,14 +184,14 @@ final class _DetailBody extends ConsumerWidget {
                 label: 'Share PDF',
                 onTap: () => _sharePdf(context),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.smd),
               QuickAction(
                 icon: Icons.copy_outlined,
                 label: 'Duplicate',
                 onTap: () => _duplicate(context, ref),
               ),
               if (isOpen && !estimate.isConverted) ...[
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.smd),
                 QuickAction(
                   icon: Icons.receipt_long_outlined,
                   label: 'To invoice',
@@ -236,7 +220,7 @@ final class _DetailBody extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.smd),
                 Expanded(
                   child: VaultButton(
                     key: const Key('decline-estimate'),
@@ -252,12 +236,10 @@ final class _DetailBody extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
-          Text('Items', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
+          const SectionHeader(title: 'Items'),
           InvoiceItemsCard(invoice: EstimateMath.shadowInvoice(estimate)),
           const SizedBox(height: AppSpacing.lg),
-          Text('PDF template', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
+          const SectionHeader(title: 'PDF template'),
           TemplatePicker(
             selected: estimate.template,
             onChanged: (template) =>
@@ -265,8 +247,7 @@ final class _DetailBody extends ConsumerWidget {
           ),
           if (estimate.notes.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            Text('Notes', style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
+            const SectionHeader(title: 'Notes'),
             VaultCard(child: Text(estimate.notes)),
           ],
           const SizedBox(height: AppSpacing.xl),
