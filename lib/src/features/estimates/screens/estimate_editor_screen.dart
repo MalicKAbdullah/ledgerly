@@ -199,7 +199,10 @@ final class _EstimateEditorScreenState
         title: Text(isNew ? 'New Estimate' : 'Edit ${_original!.number}'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gutter,
+          vertical: AppSpacing.md,
+        ),
         children: [
           ClientDropdown(
             clients: data.clients,

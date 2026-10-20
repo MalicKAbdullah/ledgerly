@@ -7,6 +7,7 @@ import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/formats.dart';
 import 'package:ledgerly/src/core/money/money.dart';
 import 'package:ledgerly/src/core/providers.dart';
+import 'package:ledgerly/src/core/widgets/amount_text.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
 import 'package:ledgerly/src/features/recurring/models/recurring_template.dart';
 
@@ -87,33 +88,54 @@ final class _TemplateTile extends ConsumerWidget {
     final notifier = ref.read(appDataProvider.notifier);
     final end = template.endDate;
     final ended = end != null && template.nextRunDate.isAfter(end);
+    final c = SuiteColors.of(context);
     final statusLine = !template.active
         ? 'Paused'
         : ended
-        ? 'Ended ${Formats.date(end)}'
-        : 'Next run ${Formats.date(template.nextRunDate)}';
+        ? 'Ended ${Formats.dateShort(end)}'
+        : 'Next ${Formats.dateShort(template.nextRunDate)}';
 
+    // Pause/resume lives in the menu so the row keeps room for the client,
+    // schedule, amount and next run without truncating.
     return AppListRow(
       onTap: () => context.go('/invoices/recurring/${template.id}/edit'),
       leading: IconBadge(
-        icon: Icons.autorenew,
-        color: SuiteColors.of(context).accent,
+        icon: template.active ? Icons.autorenew : Icons.pause_rounded,
+        color: template.active ? c.accent : c.textTertiary,
       ),
-      title: '$clientName · ${_perRunTotal().format()}',
-      subtitle: '${template.describeSchedule()} · $statusLine',
+      title: clientName,
+      subtitle: template.describeSchedule(),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Switch(
-            key: Key('recurring-active-${template.id}'),
-            value: template.active,
-            onChanged: (active) =>
-                notifier.setRecurringActive(template.id, active),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AmountText(
+                _perRunTotal(),
+                style: AppTextStyles.number,
+                alignment: AlignmentDirectional.centerEnd,
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                statusLine,
+                style: AppTextStyles.caption.copyWith(
+                  color: template.active ? c.textSecondary : c.warning,
+                ),
+              ),
+            ],
           ),
           PopupMenuButton<String>(
+            key: Key('recurring-menu-${template.id}'),
             icon: const Icon(Icons.more_vert, size: 20),
             onSelected: (action) async {
               switch (action) {
+                case 'toggle':
+                  await notifier.setRecurringActive(
+                    template.id,
+                    !template.active,
+                  );
                 case 'edit':
                   context.go('/invoices/recurring/${template.id}/edit');
                 case 'delete':
@@ -124,9 +146,13 @@ final class _TemplateTile extends ConsumerWidget {
                   );
               }
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'toggle',
+                child: Text(template.active ? 'Pause' : 'Resume'),
+              ),
+              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+              const PopupMenuItem(value: 'delete', child: Text('Delete')),
             ],
           ),
         ],

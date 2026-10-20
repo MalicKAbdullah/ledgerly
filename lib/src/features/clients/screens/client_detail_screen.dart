@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/money/money.dart';
 import 'package:ledgerly/src/core/providers.dart';
+import 'package:ledgerly/src/core/widgets/amount_text.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
 import 'package:ledgerly/src/features/clients/models/client.dart';
 import 'package:ledgerly/src/features/clients/services/client_statement_pdf_service.dart';
@@ -112,9 +113,16 @@ final class _DetailBody extends ConsumerWidget {
       }
     }
 
-    String joined(Map<String, Money> totals) => totals.isEmpty
-        ? Money.zero(data.profile.defaultCurrency).format()
-        : totals.values.map((m) => m.format()).join(' + ');
+    Widget figure(Map<String, Money> totals) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final money
+            in totals.isEmpty
+                ? [Money.zero(data.profile.defaultCurrency)]
+                : totals.values)
+          AmountText(money, style: AppTextStyles.numberMedium),
+      ],
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -181,16 +189,13 @@ final class _DetailBody extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: MetricCard(
-                  label: 'Total billed',
-                  value: _figure(joined(billed)),
-                ),
+                child: MetricCard(label: 'Total billed', value: figure(billed)),
               ),
               const SizedBox(width: AppSpacing.smd),
               Expanded(
                 child: MetricCard(
                   label: 'Outstanding',
-                  value: _figure(joined(outstanding)),
+                  value: figure(outstanding),
                 ),
               ),
             ],
@@ -221,19 +226,18 @@ final class _DetailBody extends ConsumerWidget {
     );
   }
 
-  Widget _figure(String text) => FittedBox(
-    fit: BoxFit.scaleDown,
-    alignment: Alignment.centerLeft,
-    child: Text(text, style: AppTextStyles.numberMedium),
-  );
-
   Widget _infoRow(SuiteColors c, IconData icon, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: c.textSecondary),
+          // Centres the 18 px icon on the first 15 px body line, so it
+          // stays aligned when notes wrap.
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Icon(icon, size: 18, color: c.textSecondary),
+          ),
           const SizedBox(width: AppSpacing.smd),
           Expanded(
             child: Text(

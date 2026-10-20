@@ -253,7 +253,10 @@ final class _RecurringEditorScreenState
         title: Text(isNew ? 'New Recurring Invoice' : 'Edit Recurring'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gutter,
+          vertical: AppSpacing.md,
+        ),
         children: [
           ClientDropdown(
             clients: data.clients,
