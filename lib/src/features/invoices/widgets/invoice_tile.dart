@@ -2,12 +2,14 @@ import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:ledgerly/src/core/formats.dart';
+import 'package:ledgerly/src/core/widgets/amount_text.dart';
 import 'package:ledgerly/src/core/widgets/status_chip.dart';
 import 'package:ledgerly/src/features/invoices/models/invoice.dart';
 import 'package:ledgerly/src/features/invoices/services/invoice_calculator.dart';
 
-/// Compact invoice row used on the dashboard, invoice list, and client
-/// detail screens.
+/// Invoice row used on the dashboard, invoice list, and client detail
+/// screens. Place several inside a [RowGroup] with a
+/// [InvoiceTile.separatorIndent] inset.
 final class InvoiceTile extends StatelessWidget {
   const InvoiceTile({
     required this.invoice,
@@ -22,59 +24,31 @@ final class InvoiceTile extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget? trailing;
 
+  /// Separator inset for a [RowGroup] of invoice rows (no leading badge).
+  static const double separatorIndent = AppSpacing.md;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final total = InvoiceCalculator.calculate(invoice).total;
 
-    return VaultCard(
+    return AppListRow(
       onTap: onTap,
-      child: Row(
+      title: invoice.number,
+      subtitle: 'Due ${Formats.dateShort(invoice.dueDate)} · $clientName',
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        invoice.number,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    StatusChip(invoice: invoice),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  clientName,
-                  style: theme.textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                total.format(),
-                style: AppTextStyles.number.copyWith(
-                  fontSize: 15,
-                  color: theme.colorScheme.onSurface,
-                ),
+              AmountText(
+                total,
+                style: AppTextStyles.number,
+                alignment: AlignmentDirectional.centerEnd,
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Due ${Formats.date(invoice.dueDate)}',
-                style: theme.textTheme.labelSmall,
-              ),
+              const SizedBox(height: AppSpacing.xs),
+              StatusChip(invoice: invoice),
             ],
           ),
           ?trailing,

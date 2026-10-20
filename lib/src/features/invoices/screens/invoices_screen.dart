@@ -7,6 +7,7 @@ import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/providers.dart';
 import 'package:ledgerly/src/core/share_service.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
+import 'package:ledgerly/src/core/widgets/filter_bar.dart';
 import 'package:ledgerly/src/features/invoices/services/csv_export_service.dart';
 import 'package:ledgerly/src/features/invoices/models/invoice.dart';
 import 'package:ledgerly/src/features/invoices/widgets/invoice_tile.dart';
@@ -103,73 +104,64 @@ final class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
 
           return Column(
             children: [
-              if (data.invoices.isNotEmpty)
+              if (data.invoices.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
+                    AppSpacing.gutter,
                     AppSpacing.sm,
-                    AppSpacing.md,
+                    AppSpacing.gutter,
                     0,
                   ),
-                  child: TextField(
+                  child: AppSearchField(
+                    hint: 'Search invoice # or client',
                     onChanged: (v) => setState(() => _search = v),
-                    decoration: const InputDecoration(
-                      hintText: 'Search invoice # or client',
-                      prefixIcon: Icon(Icons.search),
-                    ),
                   ),
                 ),
-              SizedBox(
-                height: 48,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                  ),
-                  children: [
-                    for (final filter in _InvoiceFilter.values)
-                      Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.sm),
-                        child: FilterChip(
-                          label: Text(_filterLabel(filter)),
-                          selected: _filter == filter,
-                          onSelected: (_) => setState(() => _filter = filter),
-                        ),
-                      ),
-                  ],
+                FilterBar<_InvoiceFilter>(
+                  values: _InvoiceFilter.values,
+                  selected: _filter,
+                  label: _filterLabel,
+                  onSelected: (f) => setState(() => _filter = f),
                 ),
-              ),
+              ],
               Expanded(
                 child: shown.isEmpty
-                    ? VaultEmptyState(
+                    ? AppEmptyState(
                         icon: Icons.receipt_long_outlined,
+                        title: data.invoices.isEmpty
+                            ? 'No invoices yet'
+                            : q.isNotEmpty
+                            ? 'No matches'
+                            : 'No ${_filterLabel(_filter).toLowerCase()} '
+                                  'invoices',
                         message: data.invoices.isEmpty
-                            ? 'No invoices yet.\nTap + to create your first '
-                                  'invoice.'
+                            ? 'Tap + to create your first invoice.'
                             : q.isNotEmpty
                             ? 'No invoices match "$_search".'
-                            : 'No ${_filterLabel(_filter).toLowerCase()} '
-                                  'invoices.',
+                            : null,
                       )
-                    : ListView.separated(
+                    : ListView(
                         padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          AppSpacing.sm,
-                          AppSpacing.md,
+                          AppSpacing.gutter,
+                          AppSpacing.xs,
+                          AppSpacing.gutter,
                           96,
                         ),
-                        itemCount: shown.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppSpacing.sm),
-                        itemBuilder: (context, index) {
-                          final invoice = shown[index];
-                          return _DismissibleInvoice(
-                            invoice: invoice,
-                            clientName:
-                                data.clientById(invoice.clientId)?.name ??
-                                'Unknown',
-                          );
-                        },
+                        children: [
+                          RowGroup(
+                            separatorIndent: InvoiceTile.separatorIndent,
+                            children: [
+                              for (final invoice in shown)
+                                _DismissibleInvoice(
+                                  key: ValueKey(invoice.id),
+                                  invoice: invoice,
+                                  clientName:
+                                      data.clientById(invoice.clientId)?.name ??
+                                      'Unknown',
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
               ),
             ],
@@ -190,7 +182,11 @@ final class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
 
 /// Swipe an unpaid invoice to mark it paid; long-press menu for more.
 final class _DismissibleInvoice extends ConsumerWidget {
-  const _DismissibleInvoice({required this.invoice, required this.clientName});
+  const _DismissibleInvoice({
+    required this.invoice,
+    required this.clientName,
+    super.key,
+  });
 
   final Invoice invoice;
   final String clientName;
@@ -221,27 +217,28 @@ final class _DismissibleInvoice extends ConsumerWidget {
         }
         return false; // The tile stays; only its status changed.
       },
-      background: Container(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.successLight,
-          borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text(
-              'Mark paid',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
+      background: Builder(
+        builder: (context) {
+          final c = SuiteColors.of(context);
+          return Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: AppSpacing.lg),
+            color: c.positive,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: AppColors.white),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Mark paid',
+                  style: AppTextStyles.labelStrong.copyWith(
+                    color: AppColors.white,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
       child: tile,
     );

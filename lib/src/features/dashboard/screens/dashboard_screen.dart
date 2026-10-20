@@ -4,15 +4,18 @@ import 'package:core_theme/core_theme.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:core_update/core_update.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/providers.dart';
+import 'package:ledgerly/src/core/widgets/amount_text.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
 import 'package:ledgerly/src/features/dashboard/dashboard_providers.dart';
 import 'package:ledgerly/src/features/dashboard/services/dashboard_stats.dart';
 import 'package:ledgerly/src/features/dashboard/widgets/revenue_chart.dart';
 import 'package:ledgerly/src/features/expenses/services/expense_stats.dart';
+import 'package:ledgerly/src/features/invoices/models/invoice.dart';
 import 'package:ledgerly/src/features/invoices/widgets/invoice_tile.dart';
 
 final class DashboardScreen extends ConsumerStatefulWidget {
@@ -91,7 +94,6 @@ final class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
       body: AsyncView<AppData>(
         value: asyncData,
         builder: (data) => _DashboardBody(data: data),
@@ -107,8 +109,6 @@ final class _DashboardBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final brightness = theme.brightness;
     // Memoized: recomputed only when the underlying invoices/expenses change,
     // not on every dashboard rebuild (theme, media query, snackbar, …).
     final stats = ref.watch(dashboardStatsProvider)!;
@@ -117,113 +117,126 @@ final class _DashboardBody extends ConsumerWidget {
 
     if (data.invoices.isEmpty) {
       final needsProfile = data.profile.displayName.isEmpty;
-      return VaultEmptyState(
-        icon: Icons.insights_outlined,
-        message: needsProfile
-            ? 'Welcome to Ledgerly!\nStart with your business details — '
-                  'they appear on every invoice you send.'
-            : 'No invoices yet.\nCreate your first invoice to see your '
-                  'business at a glance.',
-        action: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (needsProfile) ...[
-              VaultButton(
-                key: const Key('setup-profile-cta'),
-                label: 'Set up your business profile',
-                isFullWidth: false,
-                onPressed: () => context.go('/settings'),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              VaultButton(
-                label: 'New Invoice',
-                isFullWidth: false,
-                variant: VaultButtonVariant.secondary,
-                onPressed: () => context.go('/invoices/new'),
-              ),
-            ] else
-              VaultButton(
-                label: 'New Invoice',
-                isFullWidth: false,
-                onPressed: () => context.go('/invoices/new'),
-              ),
-          ],
+      return SafeArea(
+        child: AppEmptyState(
+          icon: Icons.receipt_long_outlined,
+          title: needsProfile ? 'Welcome to Ledgerly' : 'No invoices yet',
+          message: needsProfile
+              ? 'Start with your business details. They appear on every '
+                    'invoice you send.'
+              : 'Create your first invoice to see your business at a '
+                    'glance.',
+          action: VaultButton(
+            key: needsProfile ? const Key('setup-profile-cta') : null,
+            label: needsProfile
+                ? 'Set up your business profile'
+                : 'New Invoice',
+            isFullWidth: false,
+            onPressed: () =>
+                context.go(needsProfile ? '/settings' : '/invoices/new'),
+          ),
+          secondaryAction: needsProfile
+              ? VaultButton(
+                  label: 'New Invoice',
+                  isFullWidth: false,
+                  variant: VaultButtonVariant.secondary,
+                  onPressed: () => context.go('/invoices/new'),
+                )
+              : null,
         ),
       );
     }
 
+    final c = SuiteColors.of(context);
     final recent = [...data.invoices]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final openCount = data.invoices
+        .where(
+          (i) => i.status == InvoiceStatus.sent && i.currency == stats.currency,
+        )
+        .length;
+    final now = DateTime.now();
+    final name = data.profile.displayName;
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.gutter,
+        MediaQuery.paddingOf(context).top + AppSpacing.lg,
+        AppSpacing.gutter,
+        AppSpacing.xl,
+      ),
       children: [
         const _UpdateCard(),
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                label: 'Outstanding',
-                value: stats.outstanding.format(),
-                icon: Icons.hourglass_bottom,
-                color: theme.colorScheme.primary,
-                container: theme.colorScheme.primaryContainer,
-              ),
+        Text(
+          DateFormat('EEEE, d MMMM').format(now),
+          style: AppTextStyles.label.copyWith(color: c.textSecondary),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          name.isEmpty ? 'Dashboard' : name,
+          style: AppTextStyles.h2.copyWith(color: c.textPrimary),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        HeroMetricCard(
+          label: 'Outstanding',
+          trailing: stats.overdueCount > 0
+              ? DeltaBadge(
+                  delta: 0,
+                  label: '${stats.overdueCount} overdue',
+                  polarity: DeltaPolarity.upIsBad,
+                  subtle: true,
+                )
+              : null,
+          value: AmountText(stats.outstanding, style: AppTextStyles.hero),
+          delta: Flexible(
+            child: Text(
+              openCount == 1
+                  ? 'Across 1 open invoice'
+                  : 'Across $openCount open invoices',
+              style: AppTextStyles.bodySmall.copyWith(color: c.textSecondary),
             ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: _StatCard(
-                label: 'Overdue (${stats.overdueCount})',
-                value: stats.overdueAmount.format(),
-                icon: Icons.warning_amber_rounded,
-                color: stats.overdueCount > 0
-                    ? AppColors.error(brightness)
-                    : AppColors.textTertiary(brightness),
-                container: stats.overdueCount > 0
-                    ? (brightness == Brightness.dark
-                          ? AppColors.errorContainerDark
-                          : AppColors.errorContainerLight)
-                    : AppColors.surfaceAlt(brightness),
-                emphasize: stats.overdueCount > 0,
-              ),
+          ),
+          footer: [
+            StatTile(
+              label: 'Overdue (${stats.overdueCount})',
+              value: stats.overdueAmount.format(),
+              valueColor: stats.overdueCount > 0 ? c.negative : null,
+            ),
+            StatTile(
+              label: 'Paid this month',
+              value: stats.paidThisMonth.format(),
+              valueColor: c.positive,
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
-        _StatCard(
-          label: 'Paid this month',
-          value: stats.paidThisMonth.format(),
-          icon: Icons.check_circle_outline,
-          color: AppColors.success(brightness),
-          container: brightness == Brightness.dark
-              ? AppColors.successContainerDark
-              : AppColors.successContainerLight,
-        ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.smd),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _StatCard(
-                label: 'Expenses this month',
-                value: expenseStats.thisMonth.format(),
+              child: MetricCard(
+                label: 'Expenses',
+                caption: 'This month',
                 icon: Icons.payments_outlined,
-                color: AppColors.error(brightness),
-                container: brightness == Brightness.dark
-                    ? AppColors.errorContainerDark
-                    : AppColors.errorContainerLight,
+                value: AmountText(
+                  expenseStats.thisMonth,
+                  style: AppTextStyles.numberMedium,
+                ),
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.smd),
             Expanded(
-              child: _StatCard(
-                label: 'Profit this month',
-                value: profitThisMonth.format(),
+              child: MetricCard(
+                label: 'Profit',
+                caption: 'This month',
                 icon: Icons.trending_up,
-                color: profitThisMonth.isNegative
-                    ? AppColors.error(brightness)
-                    : AppColors.success(brightness),
-                container: AppColors.surfaceAlt(brightness),
-                emphasize: profitThisMonth.isNegative,
+                value: AmountText(
+                  profitThisMonth,
+                  style: AppTextStyles.numberMedium,
+                  tone: MoneyTone.signed,
+                ),
               ),
             ),
           ],
@@ -233,42 +246,46 @@ final class _DashboardBody extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             _otherCurrencyNote(stats, expenseStats),
-            style: theme.textTheme.labelSmall,
+            style: AppTextStyles.caption.copyWith(color: c.textTertiary),
           ),
         ],
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          'Revenue vs expenses — last 6 months',
-          style: theme.textTheme.titleLarge,
-        ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.smd),
         VaultCard(
-          child: RepaintBoundary(
-            child: RevenueChart(
-              months: stats.monthlyRevenue,
-              expenses: expenseStats.monthlyTotals,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Revenue vs expenses — last 6 months',
+                style: AppTextStyles.label.copyWith(color: c.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              RepaintBoundary(
+                child: RevenueChart(
+                  months: stats.monthlyRevenue,
+                  expenses: expenseStats.monthlyTotals,
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        SectionHeader(
+          title: 'Recent invoices',
+          actionLabel: 'View all',
+          onAction: () => context.go('/invoices'),
+        ),
+        RowGroup(
+          separatorIndent: InvoiceTile.separatorIndent,
           children: [
-            Text('Recent invoices', style: theme.textTheme.titleLarge),
-            TextButton(
-              onPressed: () => context.go('/invoices'),
-              child: const Text('View all'),
-            ),
+            for (final invoice in recent.take(5))
+              InvoiceTile(
+                invoice: invoice,
+                clientName:
+                    data.clientById(invoice.clientId)?.name ?? 'Unknown',
+                onTap: () => context.go('/invoices/${invoice.id}'),
+              ),
           ],
         ),
-        for (final invoice in recent.take(5)) ...[
-          InvoiceTile(
-            invoice: invoice,
-            clientName: data.clientById(invoice.clientId)?.name ?? 'Unknown',
-            onTap: () => context.go('/invoices/${invoice.id}'),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
       ],
     );
   }
@@ -282,72 +299,6 @@ String _otherCurrencyNote(DashboardStats stats, ExpenseStats expenseStats) {
   ];
   return '${parts.join(' and ')} in other currencies are not included '
       '(stats use ${stats.currency}).';
-}
-
-/// Stat card with the suite's icon-in-tinted-container pattern and
-/// tabular-figure money so digits stay aligned as values change.
-final class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.container,
-    this.emphasize = false,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-  final Color container;
-  final bool emphasize;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return VaultCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: container,
-                  borderRadius: BorderRadius.circular(AppSpacing.sm),
-                ),
-                child: Icon(icon, size: 18, color: color),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Flexible(
-                child: Text(
-                  label,
-                  style: theme.textTheme.labelMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 250),
-              style: AppTextStyles.numberLarge.copyWith(
-                fontSize: 26,
-                color: emphasize ? color : theme.colorScheme.onSurface,
-              ),
-              child: Text(value),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// "Update available" card, shown when a newer GitHub release exists and the

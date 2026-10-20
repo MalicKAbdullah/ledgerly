@@ -1,3 +1,5 @@
+import 'package:core_theme/core_theme.dart';
+import 'package:core_ui/core_ui.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:ledgerly/src/core/formats.dart';
@@ -17,7 +19,7 @@ final class RevenueChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final c = SuiteColors.of(context);
     final expenseMonths = expenses;
     final showExpenses =
         expenseMonths != null && expenseMonths.any((m) => !m.total.isZero);
@@ -33,13 +35,14 @@ final class RevenueChart extends StatelessWidget {
       );
     }
     final maxY = maxMinor == 0 ? 1.0 : maxMinor * 1.2;
-    final expenseColor = scheme.error.withValues(alpha: 0.75);
+    final labelStyle = AppTextStyles.caption.copyWith(color: c.textTertiary);
+    final lastIndex = months.length - 1;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          height: 180,
+          height: 160,
           child: BarChart(
             BarChartData(
               maxY: maxY,
@@ -63,7 +66,9 @@ final class RevenueChart extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
                           Formats.monthShort(months[index].month),
-                          style: Theme.of(context).textTheme.labelSmall,
+                          style: index == lastIndex
+                              ? labelStyle.copyWith(color: c.textPrimary)
+                              : labelStyle,
                         ),
                       );
                     },
@@ -72,7 +77,7 @@ final class RevenueChart extends StatelessWidget {
               ),
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) => scheme.onSurface,
+                  getTooltipColor: (_) => c.textPrimary,
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final isExpenseRod = showExpenses && rodIndex == 1;
                     final value = isExpenseRod
@@ -80,10 +85,9 @@ final class RevenueChart extends StatelessWidget {
                         : months[group.x].total;
                     return BarTooltipItem(
                       isExpenseRod ? '-${value.format()}' : value.format(),
-                      TextStyle(
-                        color: scheme.surface,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
+                      AppTextStyles.caption.copyWith(
+                        color: c.surface,
+                        fontWeight: FontWeight.w600,
                       ),
                     );
                   },
@@ -97,15 +101,15 @@ final class RevenueChart extends StatelessWidget {
                     barRods: [
                       BarChartRodData(
                         toY: months[i].total.minorUnits.toDouble(),
-                        width: showExpenses ? 12 : 22,
+                        width: showExpenses ? 12 : 24,
                         borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(6),
+                          top: Radius.circular(5),
                         ),
-                        color: scheme.primary,
+                        color: c.accent,
                         backDrawRodData: BackgroundBarChartRodData(
                           show: !showExpenses,
                           toY: maxY,
-                          color: scheme.primary.withValues(alpha: 0.06),
+                          color: c.surfaceAlt,
                         ),
                       ),
                       if (showExpenses)
@@ -113,9 +117,9 @@ final class RevenueChart extends StatelessWidget {
                           toY: expenseMonths[i].total.minorUnits.toDouble(),
                           width: 12,
                           borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(6),
+                            top: Radius.circular(5),
                           ),
-                          color: expenseColor,
+                          color: c.textTertiary,
                         ),
                     ],
                   ),
@@ -124,39 +128,21 @@ final class RevenueChart extends StatelessWidget {
           ),
         ),
         if (showExpenses) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _LegendDot(color: scheme.primary, label: 'Revenue'),
-              const SizedBox(width: 16),
-              _LegendDot(color: expenseColor, label: 'Expenses'),
+              SizedBox(
+                width: 96,
+                child: ChartLegendRow(color: c.accent, label: 'Revenue'),
+              ),
+              SizedBox(
+                width: 96,
+                child: ChartLegendRow(color: c.textTertiary, label: 'Expenses'),
+              ),
             ],
           ),
         ],
-      ],
-    );
-  }
-}
-
-final class _LegendDot extends StatelessWidget {
-  const _LegendDot({required this.color, required this.label});
-
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.labelSmall),
       ],
     );
   }
