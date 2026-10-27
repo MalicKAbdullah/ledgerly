@@ -2,7 +2,7 @@ name: ledgerly
 description: "Ledgerly - offline-first freelance invoice & client manager with encrypted storage and PDF export."
 publish_to: 'none'
 
-version: 1.9.0+13
+version: 1.10.0+14
 
 environment:
   sdk: ^3.11.1
@@ -31,42 +31,42 @@ dependencies:
     git:
       url: https://github.com/MalicKAbdullah/secure-suite-core.git
       path: core_crypto
-      ref: 5d0679db35ff31129f72bb363385a3574f5b7b1a
+      ref: 3e90d1221ef1e4010748944c83459df13d18c205
   core_storage:
     git:
       url: https://github.com/MalicKAbdullah/secure-suite-core.git
       path: core_storage
-      ref: 5d0679db35ff31129f72bb363385a3574f5b7b1a
+      ref: 3e90d1221ef1e4010748944c83459df13d18c205
   core_theme:
     git:
       url: https://github.com/MalicKAbdullah/secure-suite-core.git
       path: core_theme
-      ref: 5d0679db35ff31129f72bb363385a3574f5b7b1a
+      ref: 3e90d1221ef1e4010748944c83459df13d18c205
   core_ui:
     git:
       url: https://github.com/MalicKAbdullah/secure-suite-core.git
       path: core_ui
-      ref: 5d0679db35ff31129f72bb363385a3574f5b7b1a
+      ref: 3e90d1221ef1e4010748944c83459df13d18c205
   core_backup:
     git:
       url: https://github.com/MalicKAbdullah/secure-suite-core.git
       path: core_backup
-      ref: 5d0679db35ff31129f72bb363385a3574f5b7b1a
+      ref: 3e90d1221ef1e4010748944c83459df13d18c205
   core_lock:
     git:
       url: https://github.com/MalicKAbdullah/secure-suite-core.git
       path: core_lock
-      ref: 5d0679db35ff31129f72bb363385a3574f5b7b1a
+      ref: 3e90d1221ef1e4010748944c83459df13d18c205
   core_notify:
     git:
       url: https://github.com/MalicKAbdullah/secure-suite-core.git
       path: core_notify
-      ref: 5d0679db35ff31129f72bb363385a3574f5b7b1a
+      ref: 3e90d1221ef1e4010748944c83459df13d18c205
   core_update:
     git:
       url: https://github.com/MalicKAbdullah/secure-suite-core.git
       path: core_update
-      ref: 5d0679db35ff31129f72bb363385a3574f5b7b1a
+      ref: 3e90d1221ef1e4010748944c83459df13d18c205
 dev_dependencies:
   flutter_test:
     sdk: flutter
