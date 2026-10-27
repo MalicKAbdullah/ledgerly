@@ -23,7 +23,7 @@ final class LedgerlyApp extends ConsumerWidget {
       // the one-time onboarding intro sits just inside it.
       builder: (context, child) => AppLockGate(
         controller: ref.watch(lockControllerProvider),
-        appMark: const SuiteAppIcon(app: SuiteApp.ledgerly, size: 56),
+        appMark: const SuiteAppIcon(app: SuiteApp.ledgerly, size: 64),
         child: OnboardingGate(child: child),
       ),
       routerConfig: ref.watch(routerProvider),
