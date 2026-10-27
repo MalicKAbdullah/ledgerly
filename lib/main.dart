@@ -28,6 +28,7 @@ Future<void> main() async {
     storage,
     lockStorageKey,
   );
+  final appearance = await AppearanceController.load();
 
   // Local notifications (invoice reminders). Set up after the first frame is
   // scheduled; LocalNotify queues calls until it is ready.
@@ -46,6 +47,7 @@ Future<void> main() async {
         appLockEnabledOnLaunchProvider.overrideWithValue(lockEnabled),
         appLockBiometricOnLaunchProvider.overrideWithValue(biometricEnabled),
         notifyProvider.overrideWithValue(notify),
+        appearanceProvider.overrideWithValue(appearance),
       ],
       child: const LedgerlyApp(),
     ),

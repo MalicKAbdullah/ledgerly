@@ -116,6 +116,13 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           AppSpacing.xl,
         ),
         children: [
+          const SectionHeader(title: 'Display'),
+          RowGroup(
+            children: [
+              AppearanceSetting(controller: ref.watch(appearanceProvider)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
           const SectionHeader(
             title: 'Business profile',
             subtitle: 'Shown on every invoice you send.',
