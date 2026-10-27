@@ -179,7 +179,7 @@ final class _GroupedExpenseList extends ConsumerWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.gutter,
-        0,
+        AppSpacing.md,
         AppSpacing.gutter,
         96,
       ),
