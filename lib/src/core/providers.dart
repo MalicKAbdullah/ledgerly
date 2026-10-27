@@ -7,6 +7,7 @@ import 'package:core_crypto/core_crypto.dart';
 import 'package:core_lock/core_lock.dart';
 import 'package:core_notify/core_notify.dart';
 import 'package:core_storage/core_storage.dart';
+import 'package:core_theme/core_theme.dart';
 import 'package:core_update/core_update.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -25,6 +26,14 @@ import 'package:ledgerly/src/features/notifications/invoice_notifier.dart';
 /// in-memory fake — no platform channels are touched in unit tests.
 final secureStorageProvider = Provider<ISecureStorage>(
   (ref) => const SecureStorageImpl(FlutterSecureStorage()),
+);
+
+/// The System / Light / Dark choice. Loaded in main() before runApp so the
+/// first frame, lock screen included, already has the right theme.
+final appearanceProvider = Provider<AppearanceController>(
+  (ref) => throw UnimplementedError(
+    'appearanceProvider must be overridden in main() or in a test',
+  ),
 );
 
 /// Wall clock. Tests override with a fake to drive the app-lock window.

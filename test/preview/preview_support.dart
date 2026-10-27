@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/providers.dart';
 import 'package:core_crypto/core_crypto.dart';
@@ -73,7 +74,10 @@ Future<List<Override>> seededOverrides(AppData data) async {
     keyStore: DataKeyStore(secureStorage),
     file: file,
   ).save(data);
+  SharedPreferences.setMockInitialValues({});
+  final appearance = await AppearanceController.load();
   return [
+    appearanceProvider.overrideWithValue(appearance),
     secureStorageProvider.overrideWithValue(secureStorage),
     vaultFileProvider.overrideWithValue(file),
     deviceAuthProvider.overrideWithValue(const UnavailableDeviceAuth()),
