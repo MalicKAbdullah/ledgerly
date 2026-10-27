@@ -106,11 +106,16 @@ AppData sampleData() {
       Expense(
         id: 'e$m',
         date: DateTime(now.year, now.month - m, 8),
-        category: ExpenseCategory.values[m % 5],
+        category: [
+          ExpenseCategory.software,
+          ExpenseCategory.travel,
+          ExpenseCategory.supplies,
+          ExpenseCategory.fees,
+        ][m],
         description: [
           'Figma seats',
           'Train to Leeds',
-          'Co-working',
+          'Office supplies',
           'Stripe fees',
         ][m],
         amountMinor: 18000 + m * 9500,
