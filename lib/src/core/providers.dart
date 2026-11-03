@@ -9,6 +9,7 @@ import 'package:core_notify/core_notify.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:core_theme/core_theme.dart';
 import 'package:core_update/core_update.dart';
+import 'package:ledgerly/src/core/store_build.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:ledgerly/src/core/app_info.dart';
@@ -144,6 +145,7 @@ final updateAutoCheckProvider = FutureProvider<bool>(
 
 /// The pending update (null when disabled, up to date, or offline).
 final updateCheckProvider = FutureProvider<UpdateInfo?>((ref) async {
+  if (kStoreBuild) return null;
   if (!await ref.watch(updateAutoCheckProvider.future)) return null;
   return ref.watch(updateServiceProvider).check();
 });

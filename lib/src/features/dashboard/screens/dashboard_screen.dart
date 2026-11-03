@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ledgerly/src/core/data/app_data.dart';
 import 'package:ledgerly/src/core/providers.dart';
+import 'package:ledgerly/src/core/store_build.dart';
 import 'package:ledgerly/src/core/widgets/amount_text.dart';
 import 'package:ledgerly/src/core/widgets/async_view.dart';
 import 'package:ledgerly/src/features/dashboard/dashboard_providers.dart';
@@ -166,7 +167,7 @@ final class _DashboardBody extends ConsumerWidget {
         AppSpacing.xl,
       ),
       children: [
-        const _UpdateCard(),
+        if (!kStoreBuild) const _UpdateCard(),
         Text(
           DateFormat('EEEE, d MMMM').format(now),
           style: AppTextStyles.label.copyWith(color: c.textSecondary),
