@@ -1,0 +1,1 @@
+Better spacing in the Expenses screen. Recent releases also added a new lock screen and an Appearance setting (System, Light or Dark).

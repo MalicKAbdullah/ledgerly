@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ledgerly/src/core/app_info.dart';
 import 'package:ledgerly/src/core/money/money.dart';
 import 'package:ledgerly/src/core/providers.dart';
+import 'package:ledgerly/src/core/store_build.dart';
 import 'package:ledgerly/src/features/invoices/models/invoice_template.dart';
 import 'package:ledgerly/src/features/security/providers/lock_providers.dart';
 import 'package:ledgerly/src/features/settings/models/business_profile.dart';
@@ -238,9 +239,11 @@ final class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: AppSpacing.lg),
           const SecuritySection(),
           const SizedBox(height: AppSpacing.lg),
-          const SectionHeader(title: 'Updates'),
-          const _UpdateCheckTile(),
-          const SizedBox(height: AppSpacing.lg),
+          if (!kStoreBuild) ...[
+            const SectionHeader(title: 'Updates'),
+            const _UpdateCheckTile(),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           const SectionHeader(title: 'Backup'),
           RowGroup(
             children: [

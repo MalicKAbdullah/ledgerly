@@ -1,0 +1,31 @@
+Ledgerly turns the admin side of freelancing into a few taps: send a polished invoice, record a payment, track an expense and always know where you stand. Everything is encrypted on your device. There is no account, no server, no analytics and no ads.
+
+INVOICES THAT LOOK THE PART
+- Auto-numbered invoices with line items, tax and discounts.
+- Three professional PDF templates with your logo and a PAID stamp.
+- Share as PDF straight from the app.
+
+GET PAID, STAY ON TOP
+- Record full or partial payments and track the balance due.
+- Estimates and quotes that convert to an invoice in one tap.
+- Recurring invoices that generate themselves on schedule.
+
+KNOW YOUR NUMBERS
+- Track expenses and see real profit, not just revenue.
+- A dashboard with outstanding, overdue and paid-this-month at a glance.
+- Client statements and CSV export.
+
+MONEY DONE RIGHT
+- Amounts are stored as exact integer minor units (cents) with their currency, so totals always add up.
+
+YOURS ALONE
+- Optional biometric app lock.
+- All data is encrypted with AES-256-GCM under a key held in the Android keystore.
+- Encrypted backup and restore: a passphrase-protected file you control.
+
+PERMISSIONS, IN PLAIN WORDS
+- Notifications: to show an on-device reminder when invoices are overdue or about to fall due. Nothing leaves the device.
+- Biometrics: only for the optional app lock.
+- Ledgerly does not ask for contacts, location or microphone. The store build declares no network permission.
+
+Free and open source under the MIT license.
